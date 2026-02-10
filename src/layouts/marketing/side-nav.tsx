@@ -37,7 +37,7 @@ const items: Item[] = [
           },
           {
             title: 'Customers',
-            path: paths.dashboard.customers.index
+            path: paths.dashboard.locations.index
           },
           {
             title: 'Logistics',

@@ -1,9 +1,9 @@
 import { subDays, subHours, subMinutes, subSeconds } from 'date-fns';
-import type { Customer, CustomerEmail, CustomerInvoice, CustomerLog } from '../../types/customer';
+import type { Location, LocationEmail, LocationInvoice, LocationLog } from '../../types/location';
 
 const now = new Date();
 
-export const customers: Customer[] = [
+export const locations: Location[] = [
   {
     id: '5e887ac47eed253091be10cb',
     avatar: '/assets/avatars/avatar-carson-darrin.png',
@@ -165,7 +165,7 @@ export const customers: Customer[] = [
   }
 ];
 
-export const customer: Customer = {
+export const location: Location = {
   id: '5e86805e2bafd54f66cc95c3',
   address1: 'Street John Wick, no. 7',
   address2: 'House #25',
@@ -184,7 +184,7 @@ export const customer: Customer = {
   zipCode: '240355'
 };
 
-export const emails: CustomerEmail[] = [
+export const emails: LocationEmail[] = [
   {
     id: '5ece2ce3613486d95ffaea58',
     createdAt: subDays(subHours(subMinutes(now, 34), 5), 3).getTime(),
@@ -197,7 +197,7 @@ export const emails: CustomerEmail[] = [
   }
 ];
 
-export const invoices: CustomerInvoice[] = [
+export const invoices: LocationInvoice[] = [
   {
     id: '528651571NT',
     issueDate: now.getTime(),
@@ -212,7 +212,7 @@ export const invoices: CustomerInvoice[] = [
   }
 ];
 
-export const logs: CustomerLog[] = [
+export const logs: LocationLog[] = [
   {
     id: '5ece2cfeb6e2ac847bba11ce',
     createdAt: subDays(subMinutes(subSeconds(now, 56), 2), 2).getTime(),

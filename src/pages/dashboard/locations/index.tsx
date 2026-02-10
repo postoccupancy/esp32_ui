@@ -1,52 +1,46 @@
-import { ChangeEvent, MouseEvent, useCallback, useEffect, useState } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
-import NextLink from 'next/link';
+import Download01Icon from '@untitled-ui/icons-react/build/esm/Download01';
 import PlusIcon from '@untitled-ui/icons-react/build/esm/Plus';
-import {
-  Box,
-  Breadcrumbs,
-  Button,
-  Card,
-  Container,
-  Link,
-  Stack,
-  SvgIcon,
-  Typography
-} from '@mui/material';
-import { productsApi } from '../../../api/products';
-import { BreadcrumbsSeparator } from '../../../components/breadcrumbs-separator';
+import Upload01Icon from '@untitled-ui/icons-react/build/esm/Upload01';
+import { Box, Button, Card, Container, Stack, SvgIcon, Typography } from '@mui/material';
+import { locationsApi } from '../../../api/locations';
 import { useMounted } from '../../../hooks/use-mounted';
 import { usePageView } from '../../../hooks/use-page-view';
 import { Layout as DashboardLayout } from '../../../layouts/dashboard';
-import { paths } from '../../../paths';
-import { ProductListSearch } from '../../../sections/dashboard/product/product-list-search';
-import { ProductListTable } from '../../../sections/dashboard/product/product-list-table';
-import type { Product } from '../../../types/product';
+import { LocationListSearch } from '../../../sections/dashboard/location/location-list-search';
+import { LocationListTable } from '../../../sections/dashboard/location/location-list-table';
+import type { Location } from '../../../types/location';
 
 interface Filters {
-  name?: string;
-  category: string[];
-  status: string[];
-  inStock?: boolean;
+  query?: string;
+  hasAcceptedMarketing?: boolean;
+  isProspect?: boolean;
+  isReturning?: boolean;
 }
 
 interface Search {
   filters: Filters;
   page: number;
   rowsPerPage: number;
+  sortBy: string;
+  sortDir: 'asc' | 'desc';
 }
 
 const useSearch = () => {
   const [search, setSearch] = useState<Search>({
     filters: {
-      name: undefined,
-      category: [],
-      status: [],
-      inStock: undefined
+      query: undefined,
+      hasAcceptedMarketing: undefined,
+      isProspect: undefined,
+      isReturning: undefined
     },
     page: 0,
-    rowsPerPage: 5
+    rowsPerPage: 5,
+    sortBy: 'updatedAt',
+    sortDir: 'desc'
   });
 
   return {
@@ -55,24 +49,25 @@ const useSearch = () => {
   };
 };
 
-const useProducts = (search: Search): { products: Product[]; productsCount: number; } => {
+const useLocations = (search: Search): { locations: Location[]; locationsCount: number; } => {
   const isMounted = useMounted();
   const [state, setState] = useState<{
-    products: Product[];
-    productsCount: number;
+    locations: Location[];
+    locationsCount: number;
   }>({
-    products: [],
-    productsCount: 0
+    locations: [],
+    locationsCount: 0
   });
 
-  const getProducts = useCallback(async () => {
+  const getLocations = useCallback(
+    async () => {
       try {
-        const response = await productsApi.getProducts(search);
+        const response = await locationsApi.getLocations(search);
 
         if (isMounted()) {
           setState({
-            products: response.data,
-            productsCount: response.count
+            locations: response.data,
+            locationsCount: response.count
           });
         }
       } catch (err) {
@@ -84,7 +79,7 @@ const useProducts = (search: Search): { products: Product[]; productsCount: numb
 
   useEffect(
     () => {
-      getProducts();
+      getLocations();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [search]
@@ -93,9 +88,9 @@ const useProducts = (search: Search): { products: Product[]; productsCount: numb
   return state;
 };
 
-const ProductList: NextPage = () => {
+const Page: NextPage = () => {
   const { search, updateSearch } = useSearch();
-  const { products, productsCount } = useProducts(search);
+  const { locations, locationsCount } = useLocations(search);
 
   usePageView();
 
@@ -104,6 +99,17 @@ const ProductList: NextPage = () => {
       updateSearch((prevState) => ({
         ...prevState,
         filters
+      }));
+    },
+    [updateSearch]
+  );
+
+  const handleSortChange = useCallback(
+    (sort: { sortBy: string; sortDir: 'asc' | 'desc'; }): void => {
+      updateSearch((prevState) => ({
+        ...prevState,
+        sortBy: sort.sortBy,
+        sortDir: sort.sortDir
       }));
     },
     [updateSearch]
@@ -133,7 +139,7 @@ const ProductList: NextPage = () => {
     <>
       <Head>
         <title>
-          Dashboard: Product List | Devias Kit PRO
+          Dashboard: Location List | Devias Kit PRO
         </title>
       </Head>
       <Box
@@ -152,32 +158,36 @@ const ProductList: NextPage = () => {
             >
               <Stack spacing={1}>
                 <Typography variant="h4">
-                  Products
+                  Locations
                 </Typography>
-                <Breadcrumbs separator={<BreadcrumbsSeparator />}>
-                  <Link
-                    color="text.primary"
-                    component={NextLink}
-                    href={paths.dashboard.index}
-                    variant="subtitle2"
+                <Stack
+                  alignItems="center"
+                  direction="row"
+                  spacing={1}
+                >
+                  <Button
+                    color="inherit"
+                    size="small"
+                    startIcon={(
+                      <SvgIcon>
+                        <Upload01Icon />
+                      </SvgIcon>
+                    )}
                   >
-                    Dashboard
-                  </Link>
-                  <Link
-                    color="text.primary"
-                    component={NextLink}
-                    href={paths.dashboard.products.index}
-                    variant="subtitle2"
+                    Import
+                  </Button>
+                  <Button
+                    color="inherit"
+                    size="small"
+                    startIcon={(
+                      <SvgIcon>
+                        <Download01Icon />
+                      </SvgIcon>
+                    )}
                   >
-                    Products
-                  </Link>
-                  <Typography
-                    color="text.secondary"
-                    variant="subtitle2"
-                  >
-                    List
-                  </Typography>
-                </Breadcrumbs>
+                    Export
+                  </Button>
+                </Stack>
               </Stack>
               <Stack
                 alignItems="center"
@@ -185,8 +195,6 @@ const ProductList: NextPage = () => {
                 spacing={3}
               >
                 <Button
-                  component={NextLink}
-                  href={paths.dashboard.products.create}
                   startIcon={(
                     <SvgIcon>
                       <PlusIcon />
@@ -199,14 +207,19 @@ const ProductList: NextPage = () => {
               </Stack>
             </Stack>
             <Card>
-              <ProductListSearch onFiltersChange={handleFiltersChange} />
-              <ProductListTable
+              <LocationListSearch
+                onFiltersChange={handleFiltersChange}
+                onSortChange={handleSortChange}
+                sortBy={search.sortBy}
+                sortDir={search.sortDir}
+              />
+              <LocationListTable
+                locations={locations}
+                locationsCount={locationsCount}
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                page={search.page}
-                products={products}
-                productsCount={productsCount}
                 rowsPerPage={search.rowsPerPage}
+                page={search.page}
               />
             </Card>
           </Stack>
@@ -216,10 +229,10 @@ const ProductList: NextPage = () => {
   );
 };
 
-ProductList.getLayout = (page) => (
+Page.getLayout = (page) => (
   <DashboardLayout>
     {page}
   </DashboardLayout>
 );
 
-export default ProductList;
+export default Page;

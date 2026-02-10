@@ -19,13 +19,13 @@ import { MoreMenu } from '../../../components/more-menu';
 import { Scrollbar } from '../../../components/scrollbar';
 import { SeverityPill } from '../../../components/severity-pill';
 import { paths } from '../../../paths';
-import type { CustomerInvoice } from '../../../types/customer';
+import type { LocationInvoice } from '../../../types/location';
 
-interface CustomerInvoicesProps {
-  invoices?: CustomerInvoice[];
+interface LocationInvoicesProps {
+  invoices?: LocationInvoice[];
 }
 
-export const CustomerInvoices: FC<CustomerInvoicesProps> = (props) => {
+export const LocationInvoices: FC<LocationInvoicesProps> = (props) => {
   const { invoices = [], ...other } = props;
 
   return (
@@ -106,6 +106,6 @@ export const CustomerInvoices: FC<CustomerInvoicesProps> = (props) => {
   );
 };
 
-CustomerInvoices.propTypes = {
+LocationInvoices.propTypes = {
   invoices: PropTypes.array
 };

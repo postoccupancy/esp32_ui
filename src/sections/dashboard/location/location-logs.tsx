@@ -15,13 +15,13 @@ import {
 import { MoreMenu } from '../../../components/more-menu';
 import { Scrollbar } from '../../../components/scrollbar';
 import { SeverityPill } from '../../../components/severity-pill';
-import type { CustomerLog } from '../../../types/customer';
+import type { LocationLog } from '../../../types/location';
 
-interface CustomerLogsProps {
-  logs?: CustomerLog[];
+interface LocationLogsProps {
+  logs?: LocationLog[];
 }
 
-export const CustomerLogs: FC<CustomerLogsProps> = (props) => {
+export const LocationLogs: FC<LocationLogsProps> = (props) => {
   const { logs = [], ...other } = props;
 
   return (
@@ -105,6 +105,6 @@ export const CustomerLogs: FC<CustomerLogsProps> = (props) => {
   );
 };
 
-CustomerLogs.propTypes = {
+LocationLogs.propTypes = {
   logs: PropTypes.array
 };

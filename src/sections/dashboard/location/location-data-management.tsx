@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { Box, Button, Card, CardContent, CardHeader, Typography } from '@mui/material';
 
-export const CustomerDataManagement: FC = (props) => (
+export const LocationDataManagement: FC = (props) => (
   <Card {...props}>
     <CardHeader title="Data Management" />
     <CardContent sx={{ pt: 0 }}>
@@ -16,7 +16,7 @@ export const CustomerDataManagement: FC = (props) => (
           color="text.secondary"
           variant="body2"
         >
-          Remove this customer’s chart if he requested that, if not
+          Remove this location’s chart if he requested that, if not
           please be aware that what has been deleted can never brought
           back
         </Typography>

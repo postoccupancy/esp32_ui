@@ -17,26 +17,26 @@ import {
   Unstable_Grid2 as Grid
 } from '@mui/material';
 import { paths } from '../../../paths';
-import type { Customer } from '../../../types/customer';
+import type { Location } from '../../../types/location';
 import { wait } from '../../../utils/wait';
 
-interface CustomerEditFormProps {
-  customer: Customer;
+interface LocationEditFormProps {
+  location: Location;
 }
 
-export const CustomerEditForm: FC<CustomerEditFormProps> = (props) => {
-  const { customer, ...other } = props;
+export const LocationEditForm: FC<LocationEditFormProps> = (props) => {
+  const { location, ...other } = props;
   const formik = useFormik({
     initialValues: {
-      address1: customer.address1 || '',
-      address2: customer.address2 || '',
-      country: customer.country || '',
-      email: customer.email || '',
-      hasDiscount: customer.hasDiscount || false,
-      isVerified: customer.isVerified || false,
-      name: customer.name || '',
-      phone: customer.phone || '',
-      state: customer.state || '',
+      address1: location.address1 || '',
+      address2: location.address2 || '',
+      country: location.country || '',
+      email: location.email || '',
+      hasDiscount: location.hasDiscount || false,
+      isVerified: location.isVerified || false,
+      name: location.name || '',
+      phone: location.phone || '',
+      state: location.state || '',
       submit: null
     },
     validationSchema: Yup.object({
@@ -63,7 +63,7 @@ export const CustomerEditForm: FC<CustomerEditFormProps> = (props) => {
         await wait(500);
         helpers.setStatus({ success: true });
         helpers.setSubmitting(false);
-        toast.success('Customer updated');
+        toast.success('Location updated');
       } catch (err) {
         console.error(err);
         toast.error('Something went wrong!');
@@ -80,7 +80,7 @@ export const CustomerEditForm: FC<CustomerEditFormProps> = (props) => {
       {...other}
     >
       <Card>
-        <CardHeader title="Edit Customer" />
+        <CardHeader title="Edit Location" />
         <CardContent sx={{ pt: 0 }}>
           <Grid
             container
@@ -281,7 +281,7 @@ export const CustomerEditForm: FC<CustomerEditFormProps> = (props) => {
             color="inherit"
             component={NextLink}
             disabled={formik.isSubmitting}
-            href={paths.dashboard.customers.details}
+            href={paths.dashboard.locations.details}
           >
             Cancel
           </Button>
@@ -291,7 +291,7 @@ export const CustomerEditForm: FC<CustomerEditFormProps> = (props) => {
   );
 };
 
-CustomerEditForm.propTypes = {
+LocationEditForm.propTypes = {
   // @ts-ignore
-  customer: PropTypes.object.isRequired
+  location: PropTypes.object.isRequired
 };

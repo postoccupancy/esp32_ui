@@ -17,9 +17,9 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { customersApi } from '../../../api/customers';
+import { locationsApi } from '../../../api/locations';
 import { useMounted } from '../../../hooks/use-mounted';
-import type { CustomerEmail } from '../../../types/customer';
+import type { LocationEmail } from '../../../types/location';
 
 const emailOptions: string[] = [
   'Resend last invoice',
@@ -27,13 +27,13 @@ const emailOptions: string[] = [
   'Send verification'
 ];
 
-const useEmails = (): CustomerEmail[] => {
+const useEmails = (): LocationEmail[] => {
   const isMounted = useMounted();
-  const [emails, setEmails] = useState<CustomerEmail[]>([]);
+  const [emails, setEmails] = useState<LocationEmail[]>([]);
 
   const getEmails = useCallback(async () => {
     try {
-      const response = await customersApi.getEmails();
+      const response = await locationsApi.getEmails();
 
       if (isMounted()) {
         setEmails(response);
@@ -54,7 +54,7 @@ const useEmails = (): CustomerEmail[] => {
   return emails;
 };
 
-export const CustomerEmailsSummary: FC = (props) => {
+export const LocationEmailsSummary: FC = (props) => {
   const [emailOption, setEmailOption] = useState<string>(emailOptions[0]);
   const emails = useEmails();
 

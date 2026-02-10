@@ -65,31 +65,6 @@ export const getSections = (t: TFunction): Section[] => [
         )
       },
       {
-        title: t(tokens.nav.ecommerce),
-        path: paths.dashboard.ecommerce,
-        icon: (
-          <SvgIcon fontSize="small">
-            <LineChartUp04Icon />
-          </SvgIcon>
-        )
-      },
-      {
-        title: t(tokens.nav.crypto),
-        path: paths.dashboard.crypto,
-        icon: (
-          <SvgIcon fontSize="small">
-            <CurrencyBitcoinCircleIcon />
-          </SvgIcon>
-        ),
-        label: (
-          <Chip
-            color="primary"
-            label="New"
-            size="small"
-          />
-        )
-      },
-      {
         title: t(tokens.nav.account),
         path: paths.dashboard.account,
         icon: (
@@ -97,15 +72,10 @@ export const getSections = (t: TFunction): Section[] => [
             <HomeSmileIcon />
           </SvgIcon>
         )
-      }
-    ]
-  },
-  {
-    subheader: t(tokens.nav.concepts),
-    items: [
+      },
       {
-        title: t(tokens.nav.customers),
-        path: paths.dashboard.customers.index,
+        title: t(tokens.nav.locations),
+        path: paths.dashboard.locations.index,
         icon: (
           <SvgIcon fontSize="small">
             <Users03Icon />
@@ -114,72 +84,15 @@ export const getSections = (t: TFunction): Section[] => [
         items: [
           {
             title: t(tokens.nav.list),
-            path: paths.dashboard.customers.index
+            path: paths.dashboard.locations.index
           },
           {
             title: t(tokens.nav.details),
-            path: paths.dashboard.customers.details
+            path: paths.dashboard.locations.details
           },
           {
             title: t(tokens.nav.edit),
-            path: paths.dashboard.customers.edit
-          }
-        ]
-      },
-      {
-        title: t(tokens.nav.productList),
-        path: paths.dashboard.products.index,
-        icon: (
-          <SvgIcon fontSize="small">
-            <ShoppingBag03Icon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: t(tokens.nav.list),
-            path: paths.dashboard.products.index
-          },
-          {
-            title: t(tokens.nav.create),
-            path: paths.dashboard.products.create
-          }
-        ]
-      },
-      {
-        title: t(tokens.nav.orderList),
-        icon: (
-          <SvgIcon fontSize="small">
-            <ShoppingCart01Icon />
-          </SvgIcon>
-        ),
-        path: paths.dashboard.orders.index,
-        items: [
-          {
-            title: t(tokens.nav.list),
-            path: paths.dashboard.orders.index
-          },
-          {
-            title: t(tokens.nav.details),
-            path: paths.dashboard.orders.details
-          }
-        ]
-      },
-      {
-        title: t(tokens.nav.invoiceList),
-        path: paths.dashboard.invoices.index,
-        icon: (
-          <SvgIcon fontSize="small">
-            <ReceiptCheckIcon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: t(tokens.nav.list),
-            path: paths.dashboard.invoices.index
-          },
-          {
-            title: t(tokens.nav.details),
-            path: paths.dashboard.invoices.details
+            path: paths.dashboard.locations.edit
           }
         ]
       },
@@ -203,6 +116,15 @@ export const getSections = (t: TFunction): Section[] => [
         ]
       },
       {
+        title: t(tokens.nav.futureFeatures),
+        path: paths.dashboard.academy.index,
+        icon: (
+          <SvgIcon fontSize="small">
+            <Truck01Icon />
+          </SvgIcon>
+        ),
+        items: [
+          {
         title: t(tokens.nav.academy),
         path: paths.dashboard.academy.index,
         icon: (
@@ -218,48 +140,6 @@ export const getSections = (t: TFunction): Section[] => [
           {
             title: t(tokens.nav.course),
             path: paths.dashboard.academy.courseDetails
-          }
-        ]
-      },
-      {
-        title: t(tokens.nav.jobList),
-        path: paths.dashboard.jobs.index,
-        icon: (
-          <SvgIcon fontSize="small">
-            <Building04Icon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: t(tokens.nav.browse),
-            path: paths.dashboard.jobs.index
-          },
-          {
-            title: t(tokens.nav.details),
-            path: paths.dashboard.jobs.companies.details
-          },
-          {
-            title: t(tokens.nav.create),
-            path: paths.dashboard.jobs.create
-          }
-        ]
-      },
-      {
-        title: t(tokens.nav.socialMedia),
-        path: paths.dashboard.social.index,
-        icon: (
-          <SvgIcon fontSize="small">
-            <Share07Icon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: t(tokens.nav.profile),
-            path: paths.dashboard.social.profile
-          },
-          {
-            title: t(tokens.nav.feed),
-            path: paths.dashboard.social.feed
           }
         ]
       },
@@ -331,215 +211,6 @@ export const getSections = (t: TFunction): Section[] => [
           </SvgIcon>
         )
       }
-    ]
-  },
-  {
-    subheader: t(tokens.nav.pages),
-    items: [
-      {
-        title: t(tokens.nav.auth),
-        icon: (
-          <SvgIcon fontSize="small">
-            <Lock01Icon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: t(tokens.nav.login),
-            items: [
-              {
-                title: 'Classic',
-                path: paths.authDemo.login.classic
-              },
-              {
-                title: 'Modern',
-                path: paths.authDemo.login.modern
-              }
-            ]
-          },
-          {
-            title: t(tokens.nav.register),
-            items: [
-              {
-                title: 'Classic',
-                path: paths.authDemo.register.classic
-              },
-              {
-                title: 'Modern',
-                path: paths.authDemo.register.modern
-              }
-            ]
-          },
-          {
-            title: t(tokens.nav.forgotPassword),
-            items: [
-              {
-                title: 'Classic',
-                path: paths.authDemo.forgotPassword.classic
-              },
-              {
-                title: 'Modern',
-                path: paths.authDemo.forgotPassword.modern
-              }
-            ]
-          },
-          {
-            title: t(tokens.nav.resetPassword),
-            items: [
-              {
-                title: 'Classic',
-                path: paths.authDemo.resetPassword.classic
-              },
-              {
-                title: 'Modern',
-                path: paths.authDemo.resetPassword.modern
-              }
-            ]
-          },
-          {
-            title: t(tokens.nav.verifyCode),
-            items: [
-              {
-                title: 'Classic',
-                path: paths.authDemo.verifyCode.classic
-              },
-              {
-                title: 'Modern',
-                path: paths.authDemo.verifyCode.modern
-              }
-            ]
-          }
-        ]
-      },
-      {
-        title: t(tokens.nav.pricing),
-        path: paths.pricing,
-        icon: (
-          <SvgIcon fontSize="small">
-            <CreditCard01Icon />
-          </SvgIcon>
-        )
-      },
-      {
-        title: t(tokens.nav.checkout),
-        path: paths.checkout,
-        icon: (
-          <SvgIcon fontSize="small">
-            <LogOut01Icon />
-          </SvgIcon>
-        )
-      },
-      {
-        title: t(tokens.nav.contact),
-        path: paths.contact,
-        icon: (
-          <SvgIcon fontSize="small">
-            <Mail04Icon />
-          </SvgIcon>
-        )
-      },
-      {
-        title: t(tokens.nav.error),
-        icon: (
-          <SvgIcon fontSize="small">
-            <XSquareIcon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: '401',
-            path: paths['401']
-          },
-          {
-            title: '404',
-            path: paths['404']
-          },
-          {
-            title: '500',
-            path: paths['500']
-          }
         ]
       }
-    ]
-  },
-  {
-    subheader: 'Misc',
-    items: [
-      {
-        title: 'Level 0',
-        icon: (
-          <SvgIcon fontSize="small">
-            <AlignLeft02Icon />
-          </SvgIcon>
-        ),
-        items: [
-          {
-            title: 'Level 1a',
-            items: [
-              {
-                title: 'Level 2a',
-                items: [
-                  {
-                    title: 'Level 3a'
-                  },
-                  {
-                    title: 'Level 3b',
-                    disabled: true
-                  }
-                ]
-              },
-              {
-                title: 'Level 2b'
-              }
-            ]
-          },
-          {
-            title: 'Level 1b'
-          }
-        ]
-      },
-      {
-        title: 'Disabled',
-        disabled: true,
-        icon: (
-          <SvgIcon fontSize="small">
-            <XSquareIcon />
-          </SvgIcon>
-        )
-      },
-      {
-        title: 'Label',
-        icon: (
-          <SvgIcon fontSize="small">
-            <File01Icon />
-          </SvgIcon>
-        ),
-        label: (
-          <Chip
-            color="primary"
-            label="New"
-            size="small"
-          />
-        )
-      },
-      {
-        title: 'Blank',
-        path: paths.dashboard.blank,
-        icon: (
-          <SvgIcon fontSize="small">
-            <File01Icon />
-          </SvgIcon>
-        )
-      },
-      {
-        title: 'External Link',
-        path: 'https://devias.io',
-        icon: (
-          <SvgIcon fontSize="small">
-            <File01Icon />
-          </SvgIcon>
-        )
-      }
-    ]
-  }
-];
+]}];

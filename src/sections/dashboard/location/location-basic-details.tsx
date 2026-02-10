@@ -4,7 +4,7 @@ import { Button, Card, CardActions, CardHeader } from '@mui/material';
 import { PropertyList } from '../../../components/property-list';
 import { PropertyListItem } from '../../../components/property-list-item';
 
-interface CustomerBasicDetailsProps {
+interface LocationBasicDetailsProps {
   address1?: string;
   address2?: string;
   country?: string;
@@ -14,7 +14,7 @@ interface CustomerBasicDetailsProps {
   state?: string;
 }
 
-export const CustomerBasicDetails: FC<CustomerBasicDetailsProps> = (props) => {
+export const LocationBasicDetails: FC<LocationBasicDetailsProps> = (props) => {
   const { address1, address2, country, email, isVerified, phone, state, ...other } = props;
 
   return (
@@ -64,7 +64,7 @@ export const CustomerBasicDetails: FC<CustomerBasicDetailsProps> = (props) => {
   );
 };
 
-CustomerBasicDetails.propTypes = {
+LocationBasicDetails.propTypes = {
   address1: PropTypes.string,
   address2: PropTypes.string,
   country: PropTypes.string,

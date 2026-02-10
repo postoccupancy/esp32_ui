@@ -21,19 +21,19 @@ import {
   Typography,
   Unstable_Grid2 as Grid
 } from '@mui/material';
-import { customersApi } from '../../../../api/customers';
+import { locationsApi } from '../../../../api/locations';
 import { useMounted } from '../../../../hooks/use-mounted';
 import { usePageView } from '../../../../hooks/use-page-view';
 import { Layout as DashboardLayout } from '../../../../layouts/dashboard';
 import { paths } from '../../../../paths';
-import { CustomerBasicDetails } from '../../../../sections/dashboard/customer/customer-basic-details';
-import { CustomerDataManagement } from '../../../../sections/dashboard/customer/customer-data-management';
-import { CustomerEmailsSummary } from '../../../../sections/dashboard/customer/customer-emails-summary';
-import { CustomerInvoices } from '../../../../sections/dashboard/customer/customer-invoices';
-import { CustomerPayment } from '../../../../sections/dashboard/customer/customer-payment';
-import { CustomerLogs } from '../../../../sections/dashboard/customer/customer-logs';
-import type { Customer } from '../../../../types/customer';
-import { CustomerInvoice, CustomerLog } from '../../../../types/customer';
+import { LocationBasicDetails } from '../../../../sections/dashboard/location/location-basic-details';
+import { LocationDataManagement } from '../../../../sections/dashboard/location/location-data-management';
+import { LocationEmailsSummary } from '../../../../sections/dashboard/location/location-emails-summary';
+import { LocationInvoices } from '../../../../sections/dashboard/location/location-invoices';
+import { LocationPayment } from '../../../../sections/dashboard/location/location-payment';
+import { LocationLogs } from '../../../../sections/dashboard/location/location-logs';
+import type { Location } from '../../../../types/location';
+import { LocationInvoice, LocationLog } from '../../../../types/location';
 import { getInitials } from '../../../../utils/get-initials';
 
 const tabs = [
@@ -42,16 +42,16 @@ const tabs = [
   { label: 'Logs', value: 'logs' }
 ];
 
-const useCustomer = (): Customer | null => {
+const useLocation = (): Location | null => {
   const isMounted = useMounted();
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
 
-  const getCustomer = useCallback(async () => {
+  const getLocation = useCallback(async () => {
     try {
-      const response = await customersApi.getCustomer();
+      const response = await locationsApi.getLocation();
 
       if (isMounted()) {
-        setCustomer(response);
+        setLocation(response);
       }
     } catch (err) {
       console.error(err);
@@ -60,22 +60,22 @@ const useCustomer = (): Customer | null => {
 
   useEffect(
     () => {
-      getCustomer();
+      getLocation();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
-  return customer;
+  return location;
 };
 
-const useInvoices = (): CustomerInvoice[] => {
+const useInvoices = (): LocationInvoice[] => {
   const isMounted = useMounted();
-  const [invoices, setInvoices] = useState<CustomerInvoice[]>([]);
+  const [invoices, setInvoices] = useState<LocationInvoice[]>([]);
 
   const getInvoices = useCallback(async () => {
     try {
-      const response = await customersApi.getInvoices();
+      const response = await locationsApi.getInvoices();
 
       if (isMounted()) {
         setInvoices(response);
@@ -96,13 +96,13 @@ const useInvoices = (): CustomerInvoice[] => {
   return invoices;
 };
 
-const useLogs = (): CustomerLog[] => {
+const useLogs = (): LocationLog[] => {
   const isMounted = useMounted();
-  const [logs, setLogs] = useState<CustomerLog[]>([]);
+  const [logs, setLogs] = useState<LocationLog[]>([]);
 
   const getLogs = useCallback(async () => {
     try {
-      const response = await customersApi.getLogs();
+      const response = await locationsApi.getLogs();
 
       if (isMounted()) {
         setLogs(response);
@@ -125,7 +125,7 @@ const useLogs = (): CustomerLog[] => {
 
 const Page: NextPage = () => {
   const [currentTab, setCurrentTab] = useState<string>('details');
-  const customer = useCustomer();
+  const location = useLocation();
   const invoices = useInvoices();
   const logs = useLogs();
 
@@ -138,7 +138,7 @@ const Page: NextPage = () => {
     []
   );
 
-  if (!customer) {
+  if (!location) {
     return null;
   }
 
@@ -146,7 +146,7 @@ const Page: NextPage = () => {
     <>
       <Head>
         <title>
-          Dashboard: Customer Details | Devias Kit PRO
+          Dashboard: Location Details | Devias Kit PRO
         </title>
       </Head>
       <Box
@@ -163,7 +163,7 @@ const Page: NextPage = () => {
                 <Link
                   color="text.primary"
                   component={NextLink}
-                  href={paths.dashboard.customers.index}
+                  href={paths.dashboard.locations.index}
                   sx={{
                     alignItems: 'center',
                     display: 'inline-flex'
@@ -174,7 +174,7 @@ const Page: NextPage = () => {
                     <ArrowLeftIcon />
                   </SvgIcon>
                   <Typography variant="subtitle2">
-                    Customers
+                    Locations
                   </Typography>
                 </Link>
               </div>
@@ -193,17 +193,17 @@ const Page: NextPage = () => {
                   spacing={2}
                 >
                   <Avatar
-                    src={customer.avatar}
+                    src={location.avatar}
                     sx={{
                       height: 64,
                       width: 64
                     }}
                   >
-                    {getInitials(customer.name)}
+                    {getInitials(location.name)}
                   </Avatar>
                   <Stack spacing={1}>
                     <Typography variant="h4">
-                      {customer.email}
+                      {location.email}
                     </Typography>
                     <Stack
                       alignItems="center"
@@ -214,7 +214,7 @@ const Page: NextPage = () => {
                         user_id:
                       </Typography>
                       <Chip
-                        label={customer.id}
+                        label={location.id}
                         size="small"
                       />
                     </Stack>
@@ -233,7 +233,7 @@ const Page: NextPage = () => {
                         <Edit02Icon />
                       </SvgIcon>
                     )}
-                    href={paths.dashboard.customers.edit}
+                    href={paths.dashboard.locations.edit}
                   >
                     Edit
                   </Button>
@@ -280,14 +280,14 @@ const Page: NextPage = () => {
                     xs={12}
                     lg={4}
                   >
-                    <CustomerBasicDetails
-                      address1={customer.address1}
-                      address2={customer.address2}
-                      country={customer.country}
-                      email={customer.email}
-                      isVerified={!!customer.isVerified}
-                      phone={customer.phone}
-                      state={customer.state}
+                    <LocationBasicDetails
+                      address1={location.address1}
+                      address2={location.address2}
+                      country={location.country}
+                      email={location.email}
+                      isVerified={!!location.isVerified}
+                      phone={location.phone}
+                      state={location.state}
                     />
                   </Grid>
                   <Grid
@@ -295,16 +295,16 @@ const Page: NextPage = () => {
                     lg={8}
                   >
                     <Stack spacing={4}>
-                      <CustomerPayment />
-                      <CustomerEmailsSummary />
-                      <CustomerDataManagement />
+                      <LocationPayment />
+                      <LocationEmailsSummary />
+                      <LocationDataManagement />
                     </Stack>
                   </Grid>
                 </Grid>
               </div>
             )}
-            {currentTab === 'invoices' && <CustomerInvoices invoices={invoices} />}
-            {currentTab === 'logs' && <CustomerLogs logs={logs} />}
+            {currentTab === 'invoices' && <LocationInvoices invoices={invoices} />}
+            {currentTab === 'logs' && <LocationLogs logs={logs} />}
           </Stack>
         </Container>
       </Box>

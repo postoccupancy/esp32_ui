@@ -1,10 +1,10 @@
-import type { Customer, CustomerEmail, CustomerInvoice, CustomerLog } from '../../types/customer';
+import type { Location, LocationEmail, LocationInvoice, LocationLog } from '../../types/location';
 import { applyPagination } from '../../utils/apply-pagination';
 import { applySort } from '../../utils/apply-sort';
 import { deepCopy } from '../../utils/deep-copy';
-import { customer, customers, emails, invoices, logs } from './data';
+import { location, locations, emails, invoices, logs } from './data';
 
-type GetCustomersRequest = {
+type GetLocationsRequest = {
   filters?: {
     query?: string;
     hasAcceptedMarketing?: boolean;
@@ -17,42 +17,42 @@ type GetCustomersRequest = {
   sortDir?: 'asc' | 'desc';
 };
 
-type GetCustomersResponse = Promise<{
-  data: Customer[];
+type GetLocationsResponse = Promise<{
+  data: Location[];
   count: number;
 }>;
 
-type GetCustomerRequest = {};
+type GetLocationRequest = {};
 
-type GetCustomerResponse = Promise<Customer>;
+type GetLocationResponse = Promise<Location>;
 
-type GetCustomerEmailsRequest = {};
+type GetLocationEmailsRequest = {};
 
-type GetCustomerEmailsResponse = Promise<CustomerEmail[]>;
+type GetLocationEmailsResponse = Promise<LocationEmail[]>;
 
-type GetCustomerInvoicesRequest = {};
+type GetLocationInvoicesRequest = {};
 
-type GetCustomerInvoicesResponse = Promise<CustomerInvoice[]>;
+type GetLocationInvoicesResponse = Promise<LocationInvoice[]>;
 
-type GetCustomerLogsRequest = {};
+type GetLocationLogsRequest = {};
 
-type GetCustomerLogsResponse = Promise<CustomerLog[]>;
+type GetLocationLogsResponse = Promise<LocationLog[]>;
 
-class CustomersApi {
-  getCustomers(request: GetCustomersRequest = {}): GetCustomersResponse {
+class LocationsApi {
+  getLocations(request: GetLocationsRequest = {}): GetLocationsResponse {
     const { filters, page, rowsPerPage, sortBy, sortDir } = request;
 
-    let data = deepCopy(customers) as Customer[];
+    let data = deepCopy(locations) as Location[];
     let count = data.length;
 
     if (typeof filters !== 'undefined') {
-      data = data.filter((customer) => {
+      data = data.filter((location) => {
         if (typeof filters.query !== 'undefined' && filters.query !== '') {
           let queryMatched = false;
           const properties: ('email' | 'name')[] = ['email', 'name'];
 
           properties.forEach((property) => {
-            if ((customer[property]).toLowerCase().includes(filters.query!.toLowerCase())) {
+            if ((location[property]).toLowerCase().includes(filters.query!.toLowerCase())) {
               queryMatched = true;
             }
           });
@@ -63,19 +63,19 @@ class CustomersApi {
         }
 
         if (typeof filters.hasAcceptedMarketing !== 'undefined') {
-          if (customer.hasAcceptedMarketing !== filters.hasAcceptedMarketing) {
+          if (location.hasAcceptedMarketing !== filters.hasAcceptedMarketing) {
             return false;
           }
         }
 
         if (typeof filters.isProspect !== 'undefined') {
-          if (customer.isProspect !== filters.isProspect) {
+          if (location.isProspect !== filters.isProspect) {
             return false;
           }
         }
 
         if (typeof filters.isReturning !== 'undefined') {
-          if (customer.isReturning !== filters.isReturning) {
+          if (location.isReturning !== filters.isReturning) {
             return false;
           }
         }
@@ -99,21 +99,21 @@ class CustomersApi {
     });
   }
 
-  getCustomer(request?: GetCustomerRequest): GetCustomerResponse {
-    return Promise.resolve(deepCopy(customer));
+  getLocation(request?: GetLocationRequest): GetLocationResponse {
+    return Promise.resolve(deepCopy(location));
   }
 
-  getEmails(request?: GetCustomerEmailsRequest): GetCustomerEmailsResponse {
+  getEmails(request?: GetLocationEmailsRequest): GetLocationEmailsResponse {
     return Promise.resolve(deepCopy(emails));
   }
 
-  getInvoices(request?: GetCustomerInvoicesRequest): GetCustomerInvoicesResponse {
+  getInvoices(request?: GetLocationInvoicesRequest): GetLocationInvoicesResponse {
     return Promise.resolve(deepCopy(invoices));
   }
 
-  getLogs(request?: GetCustomerLogsRequest): GetCustomerLogsResponse {
+  getLogs(request?: GetLocationLogsRequest): GetLocationLogsResponse {
     return Promise.resolve(deepCopy(logs));
   }
 }
 
-export const customersApi = new CustomersApi();
+export const locationsApi = new LocationsApi();

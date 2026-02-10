@@ -1,8 +1,6 @@
 export const paths = {
   index: '/',
-  checkout: '/checkout',
   contact: '/contact',
-  pricing: '/pricing',
   auth: {
     auth0: {
       callback: '/auth/auth0/callback',
@@ -54,6 +52,7 @@ export const paths = {
     },
     account: '/dashboard/account',
     analytics: '/dashboard/analytics',
+    assistant: '/dashboard/assistant',
     blank: '/dashboard/blank',
     blog: {
       index: '/dashboard/blog',
@@ -63,38 +62,18 @@ export const paths = {
     calendar: '/dashboard/calendar',
     chat: '/dashboard/chat',
     crypto: '/dashboard/crypto',
-    customers: {
-      index: '/dashboard/customers',
-      details: '/dashboard/customers/:customerId',
-      edit: '/dashboard/customers/:customerId/edit'
+    locations: {
+      index: '/dashboard/locations',
+      details: '/dashboard/locations/:locationId',
+      edit: '/dashboard/locations/:locationId/edit'
     },
-    ecommerce: '/dashboard/ecommerce',
     fileManager: '/dashboard/file-manager',
-    invoices: {
-      index: '/dashboard/invoices',
-      details: '/dashboard/invoices/:orderId'
-    },
-    jobs: {
-      index: '/dashboard/jobs',
-      create: '/dashboard/jobs/create',
-      companies: {
-        details: '/dashboard/jobs/companies/:companyId'
-      }
-    },
     kanban: '/dashboard/kanban',
     logistics: {
       index: '/dashboard/logistics',
       fleet: '/dashboard/logistics/fleet'
     },
     mail: '/dashboard/mail',
-    orders: {
-      index: '/dashboard/orders',
-      details: '/dashboard/orders/:orderId'
-    },
-    products: {
-      index: '/dashboard/products',
-      create: '/dashboard/products/create'
-    },
     social: {
       index: '/dashboard/social',
       profile: '/dashboard/social/profile',

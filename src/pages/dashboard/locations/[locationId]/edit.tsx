@@ -4,25 +4,25 @@ import NextLink from 'next/link';
 import Head from 'next/head';
 import ArrowLeftIcon from '@untitled-ui/icons-react/build/esm/ArrowLeft';
 import { Avatar, Box, Chip, Container, Link, Stack, SvgIcon, Typography } from '@mui/material';
-import { customersApi } from '../../../../api/customers';
+import { locationsApi } from '../../../../api/locations';
 import { useMounted } from '../../../../hooks/use-mounted';
 import { usePageView } from '../../../../hooks/use-page-view';
 import { Layout as DashboardLayout } from '../../../../layouts/dashboard';
 import { paths } from '../../../../paths';
-import { CustomerEditForm } from '../../../../sections/dashboard/customer/customer-edit-form';
-import type { Customer } from '../../../../types/customer';
+import { LocationEditForm } from '../../../../sections/dashboard/location/location-edit-form';
+import type { Location } from '../../../../types/location';
 import { getInitials } from '../../../../utils/get-initials';
 
-const useCustomer = (): Customer | null => {
+const useLocation = (): Location | null => {
   const isMounted = useMounted();
-  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [location, setLocation] = useState<Location | null>(null);
 
-  const getCustomer = useCallback(async () => {
+  const getLocation = useCallback(async () => {
     try {
-      const response = await customersApi.getCustomer();
+      const response = await locationsApi.getLocation();
 
       if (isMounted()) {
-        setCustomer(response);
+        setLocation(response);
       }
     } catch (err) {
       console.error(err);
@@ -31,21 +31,21 @@ const useCustomer = (): Customer | null => {
 
   useEffect(
     () => {
-      getCustomer();
+      getLocation();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
-  return customer;
+  return location;
 };
 
 const Page: NextPage = () => {
-  const customer = useCustomer();
+  const location = useLocation();
 
   usePageView();
 
-  if (!customer) {
+  if (!location) {
     return null;
   }
 
@@ -53,7 +53,7 @@ const Page: NextPage = () => {
     <>
       <Head>
         <title>
-          Dashboard: Customer Edit | Devias Kit PRO
+          Dashboard: Location Edit | Devias Kit PRO
         </title>
       </Head>
       <Box
@@ -70,7 +70,7 @@ const Page: NextPage = () => {
                 <Link
                   color="text.primary"
                   component={NextLink}
-                  href={paths.dashboard.customers.index}
+                  href={paths.dashboard.locations.index}
                   sx={{
                     alignItems: 'center',
                     display: 'inline-flex'
@@ -81,7 +81,7 @@ const Page: NextPage = () => {
                     <ArrowLeftIcon />
                   </SvgIcon>
                   <Typography variant="subtitle2">
-                    Customers
+                    Locations
                   </Typography>
                 </Link>
               </div>
@@ -100,17 +100,17 @@ const Page: NextPage = () => {
                   spacing={2}
                 >
                   <Avatar
-                    src={customer.avatar}
+                    src={location.avatar}
                     sx={{
                       height: 64,
                       width: 64
                     }}
                   >
-                    {getInitials(customer.name)}
+                    {getInitials(location.name)}
                   </Avatar>
                   <Stack spacing={1}>
                     <Typography variant="h4">
-                      {customer.email}
+                      {location.email}
                     </Typography>
                     <Stack
                       alignItems="center"
@@ -121,7 +121,7 @@ const Page: NextPage = () => {
                         user_id:
                       </Typography>
                       <Chip
-                        label={customer.id}
+                        label={location.id}
                         size="small"
                       />
                     </Stack>
@@ -129,7 +129,7 @@ const Page: NextPage = () => {
                 </Stack>
               </Stack>
             </Stack>
-            <CustomerEditForm customer={customer} />
+            <LocationEditForm location={location} />
           </Stack>
         </Container>
       </Box>

@@ -24,23 +24,23 @@ import {
 } from '@mui/material';
 import { Scrollbar } from '../../../components/scrollbar';
 import { paths } from '../../../paths';
-import type { Customer } from '../../../types/customer';
+import type { Location } from '../../../types/location';
 import { getInitials } from '../../../utils/get-initials';
 
 interface SelectionModel {
   deselectAll: () => void;
-  deselectOne: (customerId: string) => void;
+  deselectOne: (locationId: string) => void;
   selectAll: () => void;
-  selectOne: (customerId: string) => void;
+  selectOne: (locationId: string) => void;
   selected: string[];
 }
 
-const useSelectionModel = (customers: Customer[]): SelectionModel => {
-  const customerIds = useMemo(
+const useSelectionModel = (locations: Location[]): SelectionModel => {
+  const locationIds = useMemo(
     () => {
-      return customers.map((customer) => customer.id);
+      return locations.map((location) => location.id);
     },
-    [customers]
+    [locations]
   );
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -48,20 +48,20 @@ const useSelectionModel = (customers: Customer[]): SelectionModel => {
     () => {
       setSelected([]);
     },
-    [customerIds]
+    [locationIds]
   );
 
   const selectOne = useCallback(
-    (customerId: string): void => {
-      setSelected((prevState) => [...prevState, customerId]);
+    (locationId: string): void => {
+      setSelected((prevState) => [...prevState, locationId]);
     },
     []
   );
 
   const deselectOne = useCallback(
-    (customerId: string): void => {
+    (locationId: string): void => {
       setSelected((prevState) => {
-        return prevState.filter((id) => id !== customerId);
+        return prevState.filter((id) => id !== locationId);
       });
     },
     []
@@ -69,9 +69,9 @@ const useSelectionModel = (customers: Customer[]): SelectionModel => {
 
   const selectAll = useCallback(
     (): void => {
-      setSelected([...customerIds]);
+      setSelected([...locationIds]);
     },
-    [customerIds]
+    [locationIds]
   );
 
   const deselectAll = useCallback(
@@ -90,19 +90,19 @@ const useSelectionModel = (customers: Customer[]): SelectionModel => {
   };
 };
 
-interface CustomerListTableProps {
-  customers: Customer[];
-  customersCount: number;
+interface LocationListTableProps {
+  locations: Location[];
+  locationsCount: number;
   onPageChange: (event: MouseEvent<HTMLButtonElement> | null, newPage: number) => void;
   onRowsPerPageChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   page: number;
   rowsPerPage: number;
 }
 
-export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
+export const LocationListTable: FC<LocationListTableProps> = (props) => {
   const {
-    customers,
-    customersCount,
+    locations,
+    locationsCount,
     onPageChange,
     onRowsPerPageChange,
     page,
@@ -115,7 +115,7 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
     deselectOne,
     selectOne,
     selected
-  } = useSelectionModel(customers);
+  } = useSelectionModel(locations);
 
   const handleToggleAll = useCallback(
     (event: ChangeEvent<HTMLInputElement>): void => {
@@ -130,8 +130,8 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
     [selectAll, deselectAll]
   );
 
-  const selectedAll = selected.length === customers.length;
-  const selectedSome = selected.length > 0 && selected.length < customers.length;
+  const selectedAll = selected.length === locations.length;
+  const selectedSome = selected.length > 0 && selected.length < locations.length;
   const enableBulkActions = selected.length > 0;
 
   return (
@@ -206,15 +206,15 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {customers.map((customer) => {
-              const isSelected = selected.includes(customer.id);
-              const location = `${customer.city}, ${customer.state}, ${customer.country}`;
-              const totalSpent = numeral(customer.totalSpent).format(`${customer.currency}0,0.00`);
+            {locations.map((location) => {
+              const isSelected = selected.includes(location.id);
+              const locationLabel = `${location.city}, ${location.state}, ${location.country}`;
+              const totalSpent = numeral(location.totalSpent).format(`${location.currency}0,0.00`);
 
               return (
                 <TableRow
                   hover
-                  key={customer.id}
+                  key={location.id}
                   selected={isSelected}
                 >
                   <TableCell padding="checkbox">
@@ -224,9 +224,9 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
                         const { checked } = event.target;
 
                         if (checked) {
-                          selectOne(customer.id);
+                          selectOne(location.id);
                         } else {
-                          deselectOne(customer.id);
+                          deselectOne(location.id);
                         }
                       }}
                       value={isSelected}
@@ -239,37 +239,37 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
                       spacing={1}
                     >
                       <Avatar
-                        src={customer.avatar}
+                        src={location.avatar}
                         sx={{
                           height: 42,
                           width: 42
                         }}
                       >
-                        {getInitials(customer.name)}
+                        {getInitials(location.name)}
                       </Avatar>
                       <div>
                         <Link
                           color="inherit"
                           component={NextLink}
-                          href={paths.dashboard.customers.details}
+                          href={paths.dashboard.locations.details}
                           variant="subtitle2"
                         >
-                          {customer.name}
+                          {location.name}
                         </Link>
                         <Typography
                           color="text.secondary"
                           variant="body2"
                         >
-                          {customer.email}
+                          {location.email}
                         </Typography>
                       </div>
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    {location}
+                      {locationLabel}
                   </TableCell>
                   <TableCell>
-                    {customer.totalOrders}
+                    {location.totalOrders}
                   </TableCell>
                   <TableCell>
                     <Typography variant="subtitle2">
@@ -279,7 +279,7 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
                   <TableCell align="right">
                     <IconButton
                       component={NextLink}
-                      href={paths.dashboard.customers.edit}
+                      href={paths.dashboard.locations.edit}
                     >
                       <SvgIcon>
                         <Edit02Icon />
@@ -287,7 +287,7 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
                     </IconButton>
                     <IconButton
                       component={NextLink}
-                      href={paths.dashboard.customers.details}
+                      href={paths.dashboard.locations.details}
                     >
                       <SvgIcon>
                         <ArrowRightIcon />
@@ -302,7 +302,7 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
       </Scrollbar>
       <TablePagination
         component="div"
-        count={customersCount}
+        count={locationsCount}
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
         page={page}
@@ -313,9 +313,9 @@ export const CustomerListTable: FC<CustomerListTableProps> = (props) => {
   );
 };
 
-CustomerListTable.propTypes = {
-  customers: PropTypes.array.isRequired,
-  customersCount: PropTypes.number.isRequired,
+LocationListTable.propTypes = {
+  locations: PropTypes.array.isRequired,
+  locationsCount: PropTypes.number.isRequired,
   onPageChange: PropTypes.func.isRequired,
   onRowsPerPageChange: PropTypes.func,
   page: PropTypes.number.isRequired,
