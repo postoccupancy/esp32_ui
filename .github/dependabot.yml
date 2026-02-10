@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 4
+    commit-message:
+      prefix: "chore(deps)"
+    # Restrict to patch/minor updates only to avoid lockfile resolution failures in CI, which can occur on major updates or peer-dependency jumps.
+    groups:
+      dependencies:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+# change this line to trigger re-run
