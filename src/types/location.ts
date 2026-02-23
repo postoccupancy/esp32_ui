@@ -13,6 +13,8 @@ export interface Location {
   isProspect?: boolean;
   isReturning?: boolean;
   isVerified?: boolean;
+  latitude?: number;
+  longitude?: number;
   name: string;
   phone?: string;
   state?: string;

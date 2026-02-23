@@ -210,7 +210,8 @@ export const LocationListTable: FC<LocationListTableProps> = (props) => {
               const isSelected = selected.includes(location.id);
               const locationLabel = `${location.city}, ${location.state}, ${location.country}`;
               const totalSpent = numeral(location.totalSpent).format(`${location.currency}0,0.00`);
-
+              const hrefDetails = paths.dashboard.locations.details.replace(':locationId', location.id);
+              const hrefEdit = paths.dashboard.locations.edit.replace(':locationId', location.id);
               return (
                 <TableRow
                   hover
@@ -251,7 +252,7 @@ export const LocationListTable: FC<LocationListTableProps> = (props) => {
                         <Link
                           color="inherit"
                           component={NextLink}
-                          href={paths.dashboard.locations.details}
+                          href={hrefDetails}
                           variant="subtitle2"
                         >
                           {location.name}
@@ -279,7 +280,7 @@ export const LocationListTable: FC<LocationListTableProps> = (props) => {
                   <TableCell align="right">
                     <IconButton
                       component={NextLink}
-                      href={paths.dashboard.locations.edit}
+                      href={hrefEdit}
                     >
                       <SvgIcon>
                         <Edit02Icon />
@@ -287,7 +288,7 @@ export const LocationListTable: FC<LocationListTableProps> = (props) => {
                     </IconButton>
                     <IconButton
                       component={NextLink}
-                      href={paths.dashboard.locations.details}
+                      href={hrefDetails}
                     >
                       <SvgIcon>
                         <ArrowRightIcon />

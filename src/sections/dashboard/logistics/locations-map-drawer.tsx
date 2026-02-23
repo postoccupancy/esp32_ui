@@ -3,14 +3,14 @@ import PropTypes from 'prop-types';
 import XIcon from '@untitled-ui/icons-react/build/esm/X';
 import { Drawer, IconButton, Stack, SvgIcon, Typography } from '@mui/material';
 
-interface LogisticsFleetDrawerProps {
+interface LocationsMapDrawerProps {
   children?: ReactNode;
   container?: HTMLDivElement | null;
   onClose?: () => void;
   open?: boolean;
 }
 
-export const LogisticsFleetDrawer: FC<LogisticsFleetDrawerProps> = (props) => {
+export const LocationsMapDrawer: FC<LocationsMapDrawerProps> = (props) => {
   const { children, container, open, onClose } = props;
 
   return (
@@ -42,7 +42,7 @@ export const LogisticsFleetDrawer: FC<LogisticsFleetDrawerProps> = (props) => {
         sx={{ p: 2 }}
       >
         <Typography variant="h5">
-          Fleet
+          Locations
         </Typography>
         <IconButton onClick={onClose}>
           <SvgIcon>
@@ -55,7 +55,7 @@ export const LogisticsFleetDrawer: FC<LogisticsFleetDrawerProps> = (props) => {
   );
 };
 
-LogisticsFleetDrawer.propTypes = {
+LocationsMapDrawer.propTypes = {
   children: PropTypes.node,
   container: PropTypes.any,
   onClose: PropTypes.func,

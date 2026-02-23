@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
 import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { mapboxConfig } from '../../../config';
-import type { Vehicle } from '../../../types/logistics';
+import type { Location } from '../../../types/location';
 
 // Map default view state
 const VIEW_STATE: Pick<ViewState, 'latitude' | 'longitude' | 'zoom'> = {
@@ -16,28 +16,31 @@ const VIEW_STATE: Pick<ViewState, 'latitude' | 'longitude' | 'zoom'> = {
   zoom: 11
 };
 
-interface LogisticsFleetMapProps {
-  currentVehicleId?: string;
-  onVehicleSelect?: (vehicleId: string) => void;
-  vehicles?: Vehicle[];
+interface LocationsMapProps {
+  currentLocationId?: string;
+  onLocationSelect?: (locationId: string) => void;
+  locations?: Location[];
 }
 
-export const LogisticsFleetMap: FC<LogisticsFleetMapProps> = (props) => {
-  const { onVehicleSelect, currentVehicleId, vehicles = [] } = props;
+export const LocationsMap: FC<LocationsMapProps> = (props) => {
+  const { onLocationSelect, currentLocationId, locations = [] } = props;
+  const locationsWithCoords = locations.filter(
+    (location) => typeof location.latitude === 'number' && typeof location.longitude === 'number'
+  );
   const theme = useTheme();
   const mapRef = useRef<MapRef | null>(null);
   const [viewState] = useState(() => {
-    if (!currentVehicleId) {
+    if (!currentLocationId) {
       return VIEW_STATE;
     } else {
-      const vehicle = vehicles.find((vehicle) => vehicle.id === currentVehicleId);
+      const location = locationsWithCoords.find((item) => item.id === currentLocationId);
 
-      if (!vehicle) {
+      if (!location) {
         return VIEW_STATE;
       } else {
         return {
-          latitude: vehicle.latitude,
-          longitude: vehicle.longitude,
+          latitude: location.latitude as number,
+          longitude: location.longitude as number,
           zoom: 13
         };
       }
@@ -54,30 +57,30 @@ export const LogisticsFleetMap: FC<LogisticsFleetMapProps> = (props) => {
 
       let flyOptions: FlyToOptions;
 
-      const vehicle = vehicles.find((vehicle) => vehicle.id === currentVehicleId);
+      const location = locationsWithCoords.find((item) => item.id === currentLocationId);
 
-      if (!vehicle) {
+      if (!location) {
         flyOptions = {
           center: [VIEW_STATE.longitude, VIEW_STATE.latitude]
         };
       } else {
         flyOptions = {
-          center: [vehicle.longitude, vehicle.latitude]
+          center: [location.longitude as number, location.latitude as number]
         };
       }
 
       map.flyTo(flyOptions);
     },
-    [vehicles, currentVehicleId]
+    [locationsWithCoords, currentLocationId]
   );
 
-  // Recenter if vehicles or current vehicle change
+  // Recenter if locations or current selection change
   useEffect(
     () => {
       handleRecenter();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [vehicles, currentVehicleId]
+    [locationsWithCoords, currentLocationId]
   );
 
   const mapStyle = theme.palette.mode === 'dark'
@@ -131,18 +134,18 @@ export const LogisticsFleetMap: FC<LogisticsFleetMapProps> = (props) => {
       maxZoom={20}
       minZoom={11}
     >
-      {vehicles.map((vehicle) => (
+      {locationsWithCoords.map((location) => (
         <Marker
-          key={vehicle.id}
-          latitude={vehicle.latitude}
-          longitude={vehicle.longitude}
-          onClick={() => onVehicleSelect?.(vehicle.id)}
+          key={location.id}
+          latitude={location.latitude as number}
+          longitude={location.longitude as number}
+          onClick={() => onLocationSelect?.(location.id)}
         >
           <Box
             sx={{
               height: 50,
               width: 50,
-              ...(vehicle.id === currentVehicleId && {
+              ...(location.id === currentLocationId && {
                 filter: (theme) => `drop-shadow(0px 0px 8px ${theme.palette.primary.main})`
               }),
               '& img': {
@@ -158,8 +161,8 @@ export const LogisticsFleetMap: FC<LogisticsFleetMapProps> = (props) => {
   );
 };
 
-LogisticsFleetMap.propTypes = {
-  currentVehicleId: PropTypes.string,
-  onVehicleSelect: PropTypes.func,
-  vehicles: PropTypes.array
+LocationsMap.propTypes = {
+  currentLocationId: PropTypes.string,
+  onLocationSelect: PropTypes.func,
+  locations: PropTypes.array
 };
