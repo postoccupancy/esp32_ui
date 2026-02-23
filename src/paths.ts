@@ -1,6 +1,8 @@
 export const paths = {
   index: '/',
+  pricing: '/pricing',
   contact: '/contact',
+  checkout: '/checkout',
   auth: {
     auth0: {
       callback: '/auth/auth0/callback',
@@ -51,6 +53,7 @@ export const paths = {
       courseDetails: '/dashboard/academy/courses/:courseId'
     },
     account: '/dashboard/account',
+    alerts: '/dashboard/alerts',
     analytics: '/dashboard/analytics',
     assistant: '/dashboard/assistant',
     blank: '/dashboard/blank',
@@ -68,12 +71,23 @@ export const paths = {
       edit: '/dashboard/locations/:locationId/edit'
     },
     fileManager: '/dashboard/file-manager',
+    invoices: {
+      details: '/dashboard/invoices/:invoiceId'
+    },
+    jobs: {
+      companies: {
+        details: '/dashboard/jobs/companies/:companyId'
+      }
+    },
     kanban: '/dashboard/kanban',
     logistics: {
       index: '/dashboard/logistics',
       fleet: '/dashboard/logistics/fleet'
     },
     mail: '/dashboard/mail',
+    products: {
+      index: '/dashboard/products'
+    },
     social: {
       index: '/dashboard/social',
       profile: '/dashboard/social/profile',
