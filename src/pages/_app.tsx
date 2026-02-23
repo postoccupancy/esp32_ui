@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { Provider as ReduxProvider } from 'react-redux';
@@ -11,6 +11,7 @@ import { RTL } from '../components/rtl';
 import { SplashScreen } from '../components/splash-screen';
 import { Toaster } from '../components/toaster';
 import { SettingsConsumer, SettingsProvider } from '../contexts/settings-context';
+import { TimeProvider } from '../contexts/time-context';
 import { AuthConsumer, AuthProvider } from '../contexts/auth/jwt-context';
 import { gtmConfig } from '../config';
 import { gtm } from '../libs/gtm';
@@ -25,6 +26,13 @@ import '../libs/mapbox';
 import '../locales/i18n';
 import { SettingsButton } from '../components/settings-button';
 import { SettingsDrawer } from '../components/settings-drawer';
+import {
+  HydrationBoundary,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
 
 const clientSideEmotionCache = createEmotionCache();
 
@@ -44,95 +52,104 @@ const App = (props: AppProps) => {
 
   const getLayout = Component.getLayout ?? ((page) => page);
 
+  // React Query client-side cache, shared for the whole session of the user in the browser.
+  // putting queryClient in state ensures it's only created once per session, and shared across all pages.
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
-    <CacheProvider value={emotionCache}>
-      <Head>
-        <title>
-          Devias Kit PRO
-        </title>
-        <meta
-          name="viewport"
-          content="initial-scale=1, width=device-width"
-        />
-      </Head>
-      <ReduxProvider store={store}>
-        <LocalizationProvider dateAdapter={AdapterDateFns}>
-          <AuthProvider>
-            <AuthConsumer>
-              {(auth) => (
-                <SettingsProvider>
-                  <SettingsConsumer>
-                    {(settings) => {
-                      // Prevent theme flicker when restoring custom settings from browser storage
-                      if (!settings.isInitialized) {
-                        // return null;
-                      }
+    <QueryClientProvider client={queryClient}>
+      <CacheProvider value={emotionCache}>
+        <Head>
+          <title>
+            Devias Kit PRO
+          </title>
+          <meta
+            name="viewport"
+            content="initial-scale=1, width=device-width"
+          />
+        </Head>
+        <ReduxProvider store={store}>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <AuthProvider>
+              <AuthConsumer>
+                {(auth) => (
+                  <SettingsProvider>
+                    <SettingsConsumer>
+                      {(settings) => {
+                        // Prevent theme flicker when restoring custom settings from browser storage
+                        if (!settings.isInitialized) {
+                          // return null;
+                        }
 
-                      const theme = createTheme({
-                        colorPreset: settings.colorPreset,
-                        contrast: settings.contrast,
-                        direction: settings.direction,
-                        paletteMode: settings.paletteMode,
-                        responsiveFontSizes: settings.responsiveFontSizes
-                      });
+                        const theme = createTheme({
+                          colorPreset: settings.colorPreset,
+                          contrast: settings.contrast,
+                          direction: settings.direction,
+                          paletteMode: settings.paletteMode,
+                          responsiveFontSizes: settings.responsiveFontSizes
+                        });
 
-                      // Prevent guards from redirecting
-                      const showSlashScreen = !auth.isInitialized;
+                        // Prevent guards from redirecting
+                        const showSlashScreen = !auth.isInitialized;
 
-                      return (
-                        <ThemeProvider theme={theme}>
-                          <Head>
-                            <meta
-                              name="color-scheme"
-                              content={settings.paletteMode}
-                            />
-                            <meta
-                              name="theme-color"
-                              content={theme.palette.neutral[900]}
-                            />
-                          </Head>
-                          <RTL direction={settings.direction}>
-                            <CssBaseline />
-                            {
-                              showSlashScreen
-                                ? <SplashScreen />
-                                : (
-                                  <>
-                                    {getLayout(<Component {...pageProps} />)}
-                                    <SettingsButton onClick={settings.handleDrawerOpen} />
-                                    <SettingsDrawer
-                                      canReset={settings.isCustom}
-                                      onClose={settings.handleDrawerClose}
-                                      onReset={settings.handleReset}
-                                      onUpdate={settings.handleUpdate}
-                                      open={settings.openDrawer}
-                                      values={{
-                                        colorPreset: settings.colorPreset,
-                                        contrast: settings.contrast,
-                                        direction: settings.direction,
-                                        paletteMode: settings.paletteMode,
-                                        responsiveFontSizes: settings.responsiveFontSizes,
-                                        stretch: settings.stretch,
-                                        layout: settings.layout,
-                                        navColor: settings.navColor
-                                      }}
-                                    />
-                                  </>
-                                )
-                            }
-                            <Toaster />
-                          </RTL>
-                        </ThemeProvider>
-                      );
-                    }}
-                  </SettingsConsumer>
-                </SettingsProvider>
-              )}
-            </AuthConsumer>
-          </AuthProvider>
-        </LocalizationProvider>
-      </ReduxProvider>
-    </CacheProvider>
+                        return (
+                          <ThemeProvider theme={theme}>
+                            <Head>
+                              <meta
+                                name="color-scheme"
+                                content={settings.paletteMode}
+                              />
+                              <meta
+                                name="theme-color"
+                                content={theme.palette.neutral[900]}
+                              />
+                            </Head>
+                            <RTL direction={settings.direction}>
+                              <CssBaseline />
+                              <TimeProvider>
+                                {
+                                  showSlashScreen
+                                    ? <SplashScreen />
+                                    : (
+                                      <>
+                                        {getLayout(<Component {...pageProps} />)}
+                                        <SettingsButton onClick={settings.handleDrawerOpen} />
+                                        <SettingsDrawer
+                                          canReset={settings.isCustom}
+                                          onClose={settings.handleDrawerClose}
+                                          onReset={settings.handleReset}
+                                          onUpdate={settings.handleUpdate}
+                                          open={settings.openDrawer}
+                                          values={{
+                                            colorPreset: settings.colorPreset,
+                                            contrast: settings.contrast,
+                                            direction: settings.direction,
+                                            paletteMode: settings.paletteMode,
+                                            responsiveFontSizes: settings.responsiveFontSizes,
+                                            stretch: settings.stretch,
+                                            layout: settings.layout,
+                                            navColor: settings.navColor
+                                          }}
+                                        />
+                                      </>
+                                    )
+                                }
+                              </TimeProvider>
+                              <Toaster />
+                            </RTL>
+                          </ThemeProvider>
+                        );
+                      }}
+                    </SettingsConsumer>
+                  </SettingsProvider>
+                )}
+              </AuthConsumer>
+            </AuthProvider>
+          </LocalizationProvider>
+        </ReduxProvider>
+      </CacheProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 };
 
