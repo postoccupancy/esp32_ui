@@ -26,6 +26,20 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 
 
+
+## Dev Server Note (Pinned)
+
+`npm run dev` is intentionally pinned to webpack mode (`next dev --webpack`) in `package.json`.
+
+Why:
+- Turbopack currently crashes in this project with a panic (`Failed to write page endpoint /dashboard/index`) in some environments.
+- Webpack dev mode is stable and unblocks normal development.
+
+When to revisit:
+1. Upgrade Next.js to a version with a confirmed Turbopack fix.
+2. Re-test with `npx next dev --turbo`.
+3. If stable, switch the `dev` script back to default.
+
 ## Pushing commits
 The GitHub Actions CI workflow (`.github/workflows/ci.yml`) runs:
 ```bash
