@@ -39,7 +39,7 @@ export const EcommerceProducts: FC<EcommerceProductsProps> = (props) => {
     <Card>
       <CardHeader
         action={<MoreMenu />}
-        title="Top Selling Products"
+        title="Alerts"
       />
       <Scrollbar>
         <Table sx={{ minWidth: 300 }}>

@@ -9,24 +9,26 @@ import {
   Unstable_Grid2 as Grid
 } from '@mui/material';
 import numeral from 'numeral';
+import { formatTimePresetLabel, useTimeContext } from '../../../contexts/time-context';
 
 interface EcommerceStatsProps {
-  cost: number;
-  profit: number;
-  sales: number;
+  min: number;
+  max: number;
+  average: number;
 }
 
 export const EcommerceStats: FC<EcommerceStatsProps> = (props) => {
-  const { cost, profit, sales } = props;
+  const { min, max, average } = props;
+  const { preset } = useTimeContext();
 
-  const formattedCost = numeral(cost).format('$0.[0]a');
-  const formattedProfit = numeral(profit).format('$0.[0]a');
-  const formattedSales = numeral(sales).format('$0.[0]a');
+  const formattedCost = `${numeral(max).format('0.0')}°F`;
+  const formattedProfit = `${numeral(min).format('0.0')}°F`;
+  const formattedSales = `${numeral(average).format('0.0')}°F`;
 
   return (
     <Card>
       <CardHeader
-        title="Today's Stats"
+        title={formatTimePresetLabel(preset)}
         sx={{ pb: 0 }}
       />
       <CardContent>
@@ -68,7 +70,7 @@ export const EcommerceStats: FC<EcommerceStatsProps> = (props) => {
                   color="text.secondary"
                   variant="body2"
                 >
-                  Sales
+                  Average
                 </Typography>
                 <Typography variant="h5">
                   {formattedSales}
@@ -110,7 +112,7 @@ export const EcommerceStats: FC<EcommerceStatsProps> = (props) => {
                   color="text.secondary"
                   variant="body2"
                 >
-                  Cost
+                  Max
                 </Typography>
                 <Typography variant="h5">
                   {formattedCost}
@@ -152,7 +154,7 @@ export const EcommerceStats: FC<EcommerceStatsProps> = (props) => {
                   color="text.secondary"
                   variant="body2"
                 >
-                  Profit
+                  Min
                 </Typography>
                 <Typography variant="h5">
                   {formattedProfit}

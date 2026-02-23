@@ -38,7 +38,7 @@ const Page: NextPage = () => {
     <>
       <Head>
         <title>
-          Dashboard: Analytics | Devias Kit PRO
+          Dashboard: Overview | Devias Kit PRO
         </title>
       </Head>
       <Box
@@ -64,7 +64,7 @@ const Page: NextPage = () => {
               >
                 <Stack spacing={1}>
                   <Typography variant="h4">
-                    Analytics
+                    Overview
                   </Typography>
                   <Chip
                     label={`${format(from, 'MMM d, HH:mm')} - ${format(to, 'MMM d, HH:mm')} (${bucket})`}

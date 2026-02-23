@@ -45,8 +45,8 @@ export const OverviewTransactions: FC<OverviewTransactionsProps> = (props) => {
   return (
     <Card>
       <CardHeader
-        title="Latest Transactions"
-        subheader="Based on the selected period"
+        title="Sensor Status"
+        subheader="Within the selected location"
         sx={{ pb: 0 }}
       />
       <Tabs
@@ -58,12 +58,12 @@ export const OverviewTransactions: FC<OverviewTransactionsProps> = (props) => {
           value="all"
         />
         <Tab
-          label="Confirmed"
-          value="confirmed"
+          label="Live"
+          value="live"
         />
         <Tab
-          label="Pending"
-          value="pending"
+          label="Disabled"
+          value="disabled"
         />
       </Tabs>
       <Divider />

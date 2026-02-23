@@ -1,9 +1,10 @@
-import type { FC } from 'react';
+import type { FC, ReactNode } from 'react';
 import type { ApexOptions } from 'apexcharts';
 import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Chart } from '../../../components/chart';
+import { formatTimePresetLabel, useTimeContext } from '../../../contexts/time-context';
 
 const now = new Date();
 
@@ -132,15 +133,19 @@ type ChartSeries = {
 
 interface EcommerceSalesRevenueProps {
   chartSeries: ChartSeries;
+  title?: string & ReactNode;
 }
 
 export const EcommerceSalesRevenue: FC<EcommerceSalesRevenueProps> = (props) => {
   const { chartSeries } = props;
   const chartOptions = useChartOptions();
+  const { preset } = useTimeContext();
+
+  const title = props.title || formatTimePresetLabel(preset);
 
   return (
     <Card>
-      <CardHeader title="Sales Revenue" />
+      <CardHeader title={title} />
       <CardContent sx={{ pt: 0 }}>
         <Chart
           height={320}

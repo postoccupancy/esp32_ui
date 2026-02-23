@@ -25,8 +25,6 @@ import { AnalyticsVisitsByCountry } from '../../sections/dashboard/analytics/ana
 import ArrowRightIcon from '@untitled-ui/icons-react/build/esm/ArrowRight';
 import { EcommerceSalesRevenue } from 'src/sections/dashboard/ecommerce/ecommerce-sales-revenue';
 import { EcommerceStats } from 'src/sections/dashboard/ecommerce/ecommerce-stats';
-import { useESP32 } from '@/hooks/use-esp32';
-import { getDateMsAgo, rangeOptions } from '@/utils/dataHelpers';
 
 const Page: NextPage = () => {
   const settings = useSettings();
@@ -34,15 +32,11 @@ const Page: NextPage = () => {
 
   usePageView();
 
-
-  const start_ts = getDateMsAgo(rangeOptions.sevenDays).toISOString();
-  const { data: readings } = useESP32({start_ts});
-
   return (
     <>
       <Head>
         <title>
-          Dashboard: Overview | Devias Kit PRO
+          Dashboard: Analytics | Devias Kit PRO
         </title>
       </Head>
       <Box
@@ -68,7 +62,7 @@ const Page: NextPage = () => {
               >
                 <Stack spacing={1}>
                   <Typography variant="h4">
-                    Overview / {readings?.length} readings
+                    Analytics
                   </Typography>
                   <Chip
                     label={`${format(from, 'MMM d, HH:mm')} - ${format(to, 'MMM d, HH:mm')} (${bucket})`}

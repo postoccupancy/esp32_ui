@@ -106,7 +106,7 @@ export const OverviewSubscriptionUsage: FC<OverviewSubscriptionUsageProps> = (pr
     <Card>
       <CardHeader
         subheader="Based on the selected period"
-        title="Subscription Usage"
+        title="Record Count"
         action={
           <Tabs value="year">
             <Tab

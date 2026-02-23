@@ -38,8 +38,8 @@ export const OverviewEvents: FC<OverviewEventsProps> = (props) => {
   return (
     <Card>
       <CardHeader
-        title="Upcoming events"
-        subheader="Based on the linked bank accounts"
+        title="Alerts"
+        subheader="Within the selected location"
       />
       <CardContent sx={{ pt: 0 }}>
         <List disablePadding>
