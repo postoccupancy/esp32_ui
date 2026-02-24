@@ -11,27 +11,27 @@ const Page: NextPage = () => {
 // what do these do?
 //   const settings = useSettings();
 //   usePageView();
-const start_ts = useMemo(
-() => getDateMsAgo(rangeOptions.sevenDays).toISOString(),
-  []
-);
+  const start_ts = useMemo(
+  () => getDateMsAgo(rangeOptions.sevenDays).toISOString(),
+    []
+  );
+
+  const end_ts = useMemo(
+    () => midnightTomorrow().toISOString(),
+    []
+  );
+    const { 
+      data, 
+      error, 
+      isSuccess 
+    } = useESP32({
+      start_ts, 
+      end_ts, 
+      order_desc: true,
+    });
+    const readings = data?.readings || [];
 
 
-
-const end_ts = useMemo(
-  () => midnightTomorrow().toISOString(),
-  []
-);
-  const { 
-    data, 
-    error, 
-    isSuccess 
-  } = useESP32({
-    start_ts, 
-    end_ts, 
-    order_desc: true,
-  });
-  const readings = data?.readings || [];
 
   const { 
     data: aggregatesData, 
@@ -40,7 +40,7 @@ const end_ts = useMemo(
   } = useESP32Aggregates({
     start_ts, 
     end_ts, 
-    bucket: 3600, // 1 hour buckets 
+    bucket: 300, // 5 minute buckets 
     order_desc: false,
     limit: 1000,
   });
@@ -76,7 +76,7 @@ const end_ts = useMemo(
         <br />
         Aggregates count: {aggregates.length}
         <br />
-        And here is the data from the ESP32 API:
+        And here is the {aggregates ? "aggregates" : "raw"} data from the ESP32 API:
         <pre>{JSON.stringify(aggregates, null, 2)}</pre>
       </Box>
     </>

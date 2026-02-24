@@ -82,7 +82,7 @@ export function useESP32Aggregates(options: UseESP32AggregatesOptions) {
   const { data, isSuccess, error } = useQuery({
     queryKey: ["esp32-aggregates", params],
     queryFn: fetchAggregates,
-    refetchInterval: 60000,
+    refetchInterval: 60000, // Refetch every 1m for near real-time updates
     refetchIntervalInBackground: true,
   });
 
