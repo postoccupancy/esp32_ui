@@ -6,8 +6,8 @@ import { useRouter } from 'next/router';
 export type TimeWindow = '15m' | '1h' | '6h' | '24h' | '7d' | '30d';
 export type TimeBucket = '2s' | '10s' | '1m' | '5m' | '1h';
 
-const DEFAULT_WINDOW: TimeWindow = '1h';
-const DEFAULT_BUCKET: TimeBucket = '5m';
+const DEFAULT_WINDOW: TimeWindow = '30d';
+const DEFAULT_BUCKET: TimeBucket = '1h';
 
 const WINDOWS: TimeWindow[] = ['15m', '1h', '6h', '24h', '7d', '30d'];
 const BUCKETS: TimeBucket[] = ['2s', '10s', '1m', '5m', '1h'];
@@ -179,7 +179,7 @@ export const TimeProvider: FC<TimeProviderProps> = ({ children }) => {
         { shallow: true }
       ).catch(() => undefined);
     }
-  }, [router, router.isReady, router.query.tcBucket, router.query.tcWindow]);
+  }, [router, router.isReady, router.query.tcBucket, router.query.tcWindow, bucket, window]);
 
   const syncQuery = useCallback(
     (nextWindow: TimeWindow, nextBucket: TimeBucket) => {

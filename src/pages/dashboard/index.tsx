@@ -9,7 +9,8 @@ import {
   Stack,
   SvgIcon,
   Typography,
-  Unstable_Grid2 as Grid
+  Unstable_Grid2 as Grid,
+  useTheme
 } from '@mui/material';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
@@ -28,8 +29,12 @@ import { EcommerceSalesRevenue } from 'src/sections/dashboard/ecommerce/ecommerc
 import { EcommerceStats } from 'src/sections/dashboard/ecommerce/ecommerce-stats';
 import { useESP32Aggregates } from '@/hooks/use-esp32';
 import { buildSparseTimeAxisLabels } from '@/utils/chart-utils';
+import { get } from 'lodash';
+import { CryptoWallet } from '@/sections/dashboard/crypto/crypto-wallet';
+import { MetricCard } from '@/sections/dashboard/temperature/metric-card';
+import { computeMetricsSummary } from '@/sections/dashboard/temperature/compute-metrics-summary';
 
-type ESP32AggregateSeriesKey =
+export type ESP32AggregateSeriesKey =
   | 'temp_c_avg'
   | 'temp_c_min'
   | 'temp_c_max'
@@ -41,12 +46,15 @@ type ESP32AggregateSeriesKey =
   | 'rh_max';
 
 
+
 const Page: NextPage = () => {
   const settings = useSettings();
+  const theme = useTheme();
   usePageView();
 
   const { from, to, bucketLabel, bucketValue, window } = useTimeContext();
-  const windowDays = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+  const windowMS = to.getTime() - from.getTime();
+  const windowDays = windowMS / (1000 * 60 * 60 * 24);
 
   const { data } = useESP32Aggregates({
     start_ts: from.toISOString(), 
@@ -56,6 +64,21 @@ const Page: NextPage = () => {
     limit: 1000,
   });
   const aggregates = useMemo(() => data?.aggregates || [], [data]);
+
+
+  // For comparison, fetch the previous window's aggregates
+  const prevTo = useMemo(() => new Date(from.getTime()), [from]);
+  const prevFrom = useMemo(() => new Date(from.getTime() - windowMS), [from, windowMS]);
+
+  const { data: prevData } = useESP32Aggregates({
+    start_ts: prevFrom.toISOString(),
+    end_ts: prevTo.toISOString(),
+    bucket: bucketValue,
+    order_desc: false,
+    limit: 1000,
+  });
+  const prevAggregates = useMemo(() => prevData?.aggregates ?? [], [prevData]);
+
 
   const tooltipCategories = useMemo(() => {
     return aggregates.map((agg) => {
@@ -92,6 +115,32 @@ const Page: NextPage = () => {
     return aggregates.map((agg) => round(agg[key] as number | null | undefined));
   };
 
+  
+
+  const analyticsMetrics = useMemo(() => {
+    return computeMetricsSummary(aggregates, bucketValue);
+  }, [aggregates, bucketValue]);
+
+  const previousMetrics = useMemo(() => {
+    return computeMetricsSummary(prevAggregates, bucketValue);
+  }, [prevAggregates, bucketValue]);
+
+
+  const percentChange = (current: number, previous: number): number => {
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) return 0;
+  if (previous === 0) {
+    if (current === 0) return 0;
+    return 100; // or return 0 if you prefer to avoid spikes on zero baseline
+  }
+    return Math.round(((current - previous) / previous) * 1000) / 10; // 1 decimal
+  };
+
+
+  const tempRate = percentChange(analyticsMetrics.tempMean, previousMetrics.tempMean);
+  const rhRate = percentChange(analyticsMetrics.rhMean, previousMetrics.rhMean);
+  const completenessRate = percentChange(analyticsMetrics.completenessValue, previousMetrics.completenessValue);
+  const breachRate = percentChange(analyticsMetrics.breachTotal, previousMetrics.breachTotal);
+
 
 
   return (
@@ -122,15 +171,21 @@ const Page: NextPage = () => {
                 justifyContent="space-between"
                 spacing={2}
               >
-                <Stack spacing={1}>
-                  <Typography variant="h4">
+                <Stack 
+                  spacing={2} 
+                  direction={"row"}
+                  alignItems="flex-end"
+                  sx={{ mb: 1 }}
+                >
+                  <Typography variant="h4" 
+                    sx={{ lineHeight: 1 }}>
                     Overview
                   </Typography>
                   <Chip
                     label={`${format(from, 'MMM d, HH:mm')} - ${format(to, 'MMM d, HH:mm')} (${bucketLabel})`}
                     size="small"
-                    sx={{ width: 'fit-content' }}
-                    variant="outlined"
+                    sx={{ width: 'fit-content', p: 1, display: "none" }}
+                    variant="filled"
                   />
                 </Stack>
                 <Stack
@@ -141,7 +196,83 @@ const Page: NextPage = () => {
                   <TimeContextControls />
                 </Stack>
               </Stack>
-            </Grid>            
+            </Grid>
+            <Grid
+              xs={12}
+              md={12}
+            >
+              <Stack
+                direction="row"
+                spacing={3}
+              >
+                <MetricCard
+                  chartColor={theme.palette.primary.main}
+                  // chartSeries={[
+                  //   {
+                  //     name: 'BTC',
+                  //     data: [
+                  //       56, 61, 64, 60, 63, 61, 60, 68, 66, 64, 77, 60, 65, 51, 72, 80,
+                  //       74, 67, 77, 83, 94, 95, 89, 100, 94, 104, 101, 105, 104, 103, 107, 120
+                  //     ]
+                  //   }
+                  // ]}
+                  mainAmount={`${analyticsMetrics.tempMean.toFixed(1)}°`}
+                  mainLabel="F"
+                  rate={tempRate}
+                  sx={{ flexBasis: '50%' }}
+                  min={`${analyticsMetrics.tempMin.toFixed(1)}°`}
+                  max={`${analyticsMetrics.tempMax.toFixed(1)}°`}
+                />
+                <MetricCard
+                  chartColor={theme.palette.info.main}
+                  // chartSeries={[
+                  //   {
+                  //     name: 'ETH',
+                  //     data: [
+                  //       65, 64, 32, 45, 54, 76, 82, 80, 85, 78, 82, 95, 93, 80, 112, 102,
+                  //       105, 95, 98, 102, 104, 99, 101, 100, 109, 106, 111, 105, 108, 112, 108, 111
+                  //     ]
+                  //   }
+                  // ]}
+                  mainAmount={`${analyticsMetrics.rhMean.toFixed(1)}%`}
+                  mainLabel="RH"
+                  rate={rhRate}
+                  sx={{ flexBasis: '50%' }}
+                  min={`${analyticsMetrics.rhMin.toFixed(1)}%`}
+                  max={`${analyticsMetrics.rhMax.toFixed(1)}%`}
+                />
+              </Stack>
+            </Grid>
+            {/* <Grid
+              xs={12}
+              md={12}
+            > 
+              <EcommerceStats
+                average={analyticsMetrics.tempMean ?? 0}
+                max={analyticsMetrics.tempMax ?? 0}
+                min={analyticsMetrics.tempMin ?? 0}
+              />
+            </Grid> */}
+            
+            <Grid
+              xs={12}
+              lg={12}
+            >
+              <EcommerceSalesRevenue
+                chartSeries={[
+                  {
+                    name: 'Temperature (°F)',
+                    data: getSeries('temp_f_avg') // Map aggregates to temperature average values, using null if not available
+                  },
+                  {
+                    name: 'Relative Humidity (%)',
+                    data: getSeries('rh_avg') // Map aggregates to RH average values, using null if not available
+                  }
+                ]}
+                tooltipCategories={tooltipCategories}
+                xAxisLabels={xAxisLabels}
+              />
+            </Grid>
             <Grid
               xs={12}
               md={3}
@@ -162,11 +293,11 @@ const Page: NextPage = () => {
                 )}
                 chartSeries={[
                   {
-                    data: [0, 170, 242, 98, 63, 56, 85, 171, 209, 163, 204, 21, 264, 0]
+                    data: analyticsMetrics.withinThresholdSeries
                   }
                 ]}
                 title="% Time within Thresholds"
-                value="98%"
+                value={`${analyticsMetrics.withinThresholdPct}%`}
               />
             </Grid>
             <Grid
@@ -189,11 +320,11 @@ const Page: NextPage = () => {
                 )}
                 chartSeries={[
                   {
-                    data: [0, 245, 290, 187, 172, 106, 15, 210, 202, 19, 18, 3, 212, 0]
+                    data: analyticsMetrics.madSeries
                   }
                 ]}
                 title="Mean Absolute Deviation"
-                value="14.4"
+                value={`${analyticsMetrics.madValue}`}
               />
             </Grid>
             <Grid
@@ -216,11 +347,11 @@ const Page: NextPage = () => {
                 )}
                 chartSeries={[
                   {
-                    data: [0, 277, 191, 93, 92, 85, 166, 240, 63, 4, 296, 144, 166, 0]
+                    data: analyticsMetrics.completenessSeries
                   }
                 ]}
                 title="Data Completeness"
-                value="92%"
+                value={`${analyticsMetrics.completenessValue}%`}
               />
               
             </Grid>
@@ -244,98 +375,15 @@ const Page: NextPage = () => {
                 )}
                 chartSeries={[
                   {
-                    data: [0, 277, 191, 93, 92, 85, 166, 240, 63, 4, 296, 144, 166, 0]
+                    data: analyticsMetrics.breachSeries
                   }
                 ]}
                 title="Threshold Breaches"
-                value="12"
+                value={`${analyticsMetrics.breachTotal}`}
               />
               
             </Grid>
-            <Grid
-              xs={12}
-              lg={12}
-            >
-              <EcommerceSalesRevenue
-                chartSeries={[
-                  {
-                    name: 'Temperature (°F)',
-                    data: getSeries('temp_f_avg') // Map aggregates to temperature average values, using null if not available
-                  },
-                  {
-                    name: 'Relative Humidity (%)',
-                    data: getSeries('rh_avg') // Map aggregates to RH average values, using null if not available
-                  }
-                ]}
-                tooltipCategories={tooltipCategories}
-                xAxisLabels={xAxisLabels}
-              />
-            </Grid>
-            <Grid
-              xs={12}
-              lg={4}
-            >
-              <EcommerceSalesRevenue
-                title="Scatter Plot: temperature vs humidity"
-                chartSeries={[
-                  {
-                    name: 'Temperature (°F)',
-                    data: [3350, 1840, 2254, 5780, 9349, 5241, 2770, 2051, 3764, 2385, 5912, 8323]
-                  },
-                  {
-                    name: 'Relative Humidity (%)',
-                    data: [35, 41, 62, 42, 13, 18, 29, 37, 36, 51, 32, 35]
-                  }
-                ]}
-              />
-            </Grid>
-            <Grid
-              xs={12}
-              lg={4}
-            >
-              <EcommerceSalesRevenue
-                title="Histogram: temperature/humidity distribution"
-                chartSeries={[
-                  {
-                    name: 'Temperature (°F)',
-                    data: [3350, 1840, 2254, 5780, 9349, 5241, 2770, 2051, 3764, 2385, 5912, 8323]
-                  },
-                  {
-                    name: 'Relative Humidity (%)',
-                    data: [35, 41, 62, 42, 13, 18, 29, 37, 36, 51, 32, 35]
-                  }
-                ]}
-              />
-            </Grid>
-            <Grid
-              xs={12}
-              lg={4}
-            >
-              <EcommerceSalesRevenue
-                title="Heatmap: temperature vs humidity over time"
-                chartSeries={[
-                  {
-                    name: 'Temperature (°F)',
-                    data: [3350, 1840, 2254, 5780, 9349, 5241, 2770, 2051, 3764, 2385, 5912, 8323]
-                  },
-                  {
-                    name: 'Relative Humidity (%)',
-                    data: [35, 41, 62, 42, 13, 18, 29, 37, 36, 51, 32, 35]
-                  }
-                ]}
-              />            
-            </Grid>
 
-            <Grid
-              xs={12}
-              md={12}
-            > 
-              <EcommerceStats
-                average={69}
-                max={72}
-                min={64}
-              />
-            </Grid>
 
           </Grid>
           
