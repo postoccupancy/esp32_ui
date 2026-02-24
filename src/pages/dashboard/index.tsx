@@ -12,6 +12,7 @@ import {
   Unstable_Grid2 as Grid
 } from '@mui/material';
 import { format } from 'date-fns';
+import { useMemo } from 'react';
 import { usePageView } from '../../hooks/use-page-view';
 import { useSettings } from '../../hooks/use-settings';
 import { Layout as DashboardLayout } from '../../layouts/dashboard';
@@ -25,18 +26,73 @@ import { AnalyticsVisitsByCountry } from '../../sections/dashboard/analytics/ana
 import ArrowRightIcon from '@untitled-ui/icons-react/build/esm/ArrowRight';
 import { EcommerceSalesRevenue } from 'src/sections/dashboard/ecommerce/ecommerce-sales-revenue';
 import { EcommerceStats } from 'src/sections/dashboard/ecommerce/ecommerce-stats';
-import { useESP32 } from '@/hooks/use-esp32';
-import { getDateMsAgo, rangeOptions } from '@/utils/dataHelpers';
+import { useESP32Aggregates } from '@/hooks/use-esp32';
+import { buildSparseTimeAxisLabels } from '@/utils/chart-utils';
+
+type ESP32AggregateSeriesKey =
+  | 'temp_c_avg'
+  | 'temp_c_min'
+  | 'temp_c_max'
+  | 'temp_f_avg'
+  | 'temp_f_min'
+  | 'temp_f_max'
+  | 'rh_avg'
+  | 'rh_min'
+  | 'rh_max';
+
 
 const Page: NextPage = () => {
   const settings = useSettings();
-  const { from, to, bucket } = useTimeContext();
-
   usePageView();
 
+  const { from, to, bucketLabel, bucketValue, window } = useTimeContext();
+  const windowDays = (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
 
-  const start_ts = getDateMsAgo(rangeOptions.sevenDays).toISOString();
-  const { data: readings } = useESP32({start_ts});
+  const { data } = useESP32Aggregates({
+    start_ts: from.toISOString(), 
+    // end_ts: to.toISOString(),
+    bucket: bucketValue,  
+    order_desc: false,
+    limit: 1000,
+  });
+  const aggregates = useMemo(() => data?.aggregates || [], [data]);
+
+  const tooltipCategories = useMemo(() => {
+    return aggregates.map((agg) => {
+      const d = new Date(agg.bucket_start);
+      return d.toLocaleTimeString([], {
+        weekday: windowDays > 1 ? 'short' : undefined,
+        month: windowDays > 1 ? 'short' : undefined,
+        day: windowDays > 1 ? 'numeric' : undefined,
+        hour: 'numeric',
+        minute: bucketValue < 3600 ? '2-digit' : undefined,
+        second: bucketValue < 60 ? '2-digit' : undefined,
+      });
+    });
+  }, [aggregates, windowDays, bucketValue]);
+
+  const bucketStarts = useMemo(
+    () => aggregates.map((agg) => agg.bucket_start),
+    [aggregates]
+  );
+
+  const xAxisLabels = useMemo(
+    () => buildSparseTimeAxisLabels(bucketStarts, window),
+    [bucketStarts, window]
+  );
+  
+  const round = (value: number | null | undefined, decimals = 1) => {
+    if (value == null) return null;
+    const factor = 10 ** decimals;
+    return Math.round(value * factor) / factor;
+  };
+
+
+  const getSeries = (key: ESP32AggregateSeriesKey) => {
+    return aggregates.map((agg) => round(agg[key] as number | null | undefined));
+  };
+
+
 
   return (
     <>
@@ -68,10 +124,10 @@ const Page: NextPage = () => {
               >
                 <Stack spacing={1}>
                   <Typography variant="h4">
-                    Overview / {readings?.length} readings
+                    Overview
                   </Typography>
                   <Chip
-                    label={`${format(from, 'MMM d, HH:mm')} - ${format(to, 'MMM d, HH:mm')} (${bucket})`}
+                    label={`${format(from, 'MMM d, HH:mm')} - ${format(to, 'MMM d, HH:mm')} (${bucketLabel})`}
                     size="small"
                     sx={{ width: 'fit-content' }}
                     variant="outlined"
@@ -83,16 +139,6 @@ const Page: NextPage = () => {
                   spacing={2}
                 >
                   <TimeContextControls />
-                  {/* <Button
-                    startIcon={(
-                      <SvgIcon>
-                        <PlusIcon />
-                      </SvgIcon>
-                    )}
-                    variant="contained"
-                  >
-                    New Dashboard
-                  </Button> */}
                 </Stack>
               </Stack>
             </Grid>            
@@ -214,13 +260,15 @@ const Page: NextPage = () => {
                 chartSeries={[
                   {
                     name: 'Temperature (°F)',
-                    data: [3350, 1840, 2254, 5780, 9349, 5241, 2770, 2051, 3764, 2385, 5912, 8323]
+                    data: getSeries('temp_f_avg') // Map aggregates to temperature average values, using null if not available
                   },
                   {
                     name: 'Relative Humidity (%)',
-                    data: [35, 41, 62, 42, 13, 18, 29, 37, 36, 51, 32, 35]
+                    data: getSeries('rh_avg') // Map aggregates to RH average values, using null if not available
                   }
                 ]}
+                tooltipCategories={tooltipCategories}
+                xAxisLabels={xAxisLabels}
               />
             </Grid>
             <Grid
