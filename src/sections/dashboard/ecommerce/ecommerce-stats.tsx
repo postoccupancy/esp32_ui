@@ -9,7 +9,7 @@ import {
   Unstable_Grid2 as Grid
 } from '@mui/material';
 import numeral from 'numeral';
-import { formatTimePresetLabel, useTimeContext } from '../../../contexts/time-context';
+import { formatTimeWindowLabel, useTimeContext } from '../../../contexts/time-context';
 
 interface EcommerceStatsProps {
   min: number;
@@ -19,7 +19,7 @@ interface EcommerceStatsProps {
 
 export const EcommerceStats: FC<EcommerceStatsProps> = (props) => {
   const { min, max, average } = props;
-  const { preset } = useTimeContext();
+  const { window } = useTimeContext();
 
   const formattedCost = `${numeral(max).format('0.0')}°F`;
   const formattedProfit = `${numeral(min).format('0.0')}°F`;
@@ -28,7 +28,7 @@ export const EcommerceStats: FC<EcommerceStatsProps> = (props) => {
   return (
     <Card>
       <CardHeader
-        title={formatTimePresetLabel(preset)}
+        title={formatTimeWindowLabel(window)}
         sx={{ pb: 0 }}
       />
       <CardContent>

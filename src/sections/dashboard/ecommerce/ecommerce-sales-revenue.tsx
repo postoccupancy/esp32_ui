@@ -4,7 +4,7 @@ import { format, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Chart } from '../../../components/chart';
-import { formatTimePresetLabel, useTimeContext } from '../../../contexts/time-context';
+import { formatTimeWindowLabel, useTimeContext } from '../../../contexts/time-context';
 
 const now = new Date();
 
@@ -18,9 +18,33 @@ const createCategories = (): string[] => {
   return categories;
 };
 
-const useChartOptions = (): ApexOptions => {
+// added this helper to calculate min/max for y-axis based on data, with some padding
+const getSeriesRange = (data: (number | null)[]) => {
+  const values = data.filter((v): v is number => typeof v === 'number');
+  if (!values.length) return { min: 0, max: 1 };
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = (max - min || 1) * 0.1; // 10% padding
+
+  return {
+    min: min - pad,
+    max: max + pad,
+  };
+};
+
+
+
+
+const useChartOptions = (
+  leftRange: { min: number; max: number }, 
+  rightRange: { min: number; max: number },
+  tooltipCategories?: string[],
+  xAxisLabels?: string[],
+): ApexOptions => {
   const theme = useTheme();
-  const categories = createCategories();
+  if (!tooltipCategories) tooltipCategories = createCategories();
+  const axisCategories = xAxisLabels && xAxisLabels.length ? xAxisLabels : tooltipCategories;
 
   return {
     chart: {
@@ -73,7 +97,7 @@ const useChartOptions = (): ApexOptions => {
       },
       radius: 2,
       shape: 'circle',
-      size: 4,
+      size: 1,
       strokeWidth: 0
     },
     stroke: {
@@ -85,6 +109,22 @@ const useChartOptions = (): ApexOptions => {
     theme: {
       mode: theme.palette.mode
     },
+    tooltip: {
+      x: {
+        formatter: (value: number, opts?: { dataPointIndex?: number }) => {
+          const i = opts?.dataPointIndex;
+          if (
+            typeof i === 'number' &&
+            tooltipCategories &&
+            i >= 0 &&
+            i < tooltipCategories.length
+          ) {
+            return tooltipCategories[i];
+          }
+          return String(value);
+        }
+      }
+    },
     xaxis: {
       axisBorder: {
         show: false
@@ -92,11 +132,11 @@ const useChartOptions = (): ApexOptions => {
       axisTicks: {
         show: false
       },
-      categories,
+      categories: axisCategories,
       labels: {
-        style: {
-          colors: theme.palette.text.secondary
-        }
+        show: true,
+        rotate: 0,
+        hideOverlappingLabels: true,
       }
     },
     yaxis: [
@@ -109,7 +149,10 @@ const useChartOptions = (): ApexOptions => {
         },
         labels: {
           show: false
-        }
+        },
+        min: leftRange.min,
+        max: leftRange.max,
+        forceNiceScale: true,
       },
       {
         axisBorder: {
@@ -120,7 +163,10 @@ const useChartOptions = (): ApexOptions => {
         },
         labels: {
           show: false
-        }
+        },
+        min: rightRange.min,
+        max: rightRange.max,
+        forceNiceScale: true,
       }
     ]
   };
@@ -134,14 +180,20 @@ type ChartSeries = {
 interface EcommerceSalesRevenueProps {
   chartSeries: ChartSeries;
   title?: string & ReactNode;
+  tooltipCategories?: string[];
+  xAxisLabels?: string[];
 }
 
 export const EcommerceSalesRevenue: FC<EcommerceSalesRevenueProps> = (props) => {
-  const { chartSeries } = props;
-  const chartOptions = useChartOptions();
-  const { preset } = useTimeContext();
+  const { chartSeries, tooltipCategories, xAxisLabels } = props;
+  const { window } = useTimeContext();
 
-  const title = props.title || formatTimePresetLabel(preset);
+  const title = props.title || formatTimeWindowLabel(window);
+
+  const leftRange = getSeriesRange(chartSeries[0]?.data ?? []);
+  const rightRange = getSeriesRange(chartSeries[1]?.data ?? []);
+  const chartOptions = useChartOptions(leftRange, rightRange, tooltipCategories, xAxisLabels);
+
 
   return (
     <Card>
