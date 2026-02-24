@@ -25,7 +25,7 @@ interface TimeContextControlsProps {
 
 export const TimeContextControls: FC<TimeContextControlsProps> = (props) => {
   const { showBucket = true } = props;
-  const { preset, bucket, setPreset, setBucket } = useTimeContext();
+  const { window, bucket, allowedBuckets, setWindow, setBucket } = useTimeContext();
 
   return (
     <Stack
@@ -41,8 +41,8 @@ export const TimeContextControls: FC<TimeContextControlsProps> = (props) => {
         <Select
           label="Window"
           labelId="time-preset-label"
-          value={preset}
-          onChange={(event) => setPreset(event.target.value as typeof preset)}
+          value={window}
+          onChange={(event) => setWindow(event.target.value as typeof window)}
         >
           {presetOptions.map((option) => (
             <MenuItem
@@ -70,6 +70,7 @@ export const TimeContextControls: FC<TimeContextControlsProps> = (props) => {
               <MenuItem
                 key={option.value}
                 value={option.value}
+                disabled={!allowedBuckets.includes(option.value)}
               >
                 {option.label}
               </MenuItem>
