@@ -1,14 +1,15 @@
+import { AlertCategory } from '@/types/alert';
 import { alerts } from '../../../api/alerts/data';
 
 export interface Notification {
   alertId: string;
-  category: 'environment' | 'system';
+  category: AlertCategory;
   id: string;
   createdAt: number;
   description: string;
   read?: boolean;
   title: string;
-  type: 'environment' | 'system';
+  type: AlertCategory;
 }
 
 const toNotification = (alertIndex: number): Notification => {

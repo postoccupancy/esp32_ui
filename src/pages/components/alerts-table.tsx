@@ -1,12 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
-import {
-  alpha,
-  useTheme,
-} from '@mui/material/styles';
 import {
   Box,
   Button,
@@ -15,10 +11,6 @@ import {
   Chip,
   Container,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Table,
   TableBody,
@@ -26,11 +18,13 @@ import {
   TableHead,
   TableRow,
   Typography,
-  Unstable_Grid2 as Grid
+  Unstable_Grid2 as Grid,
+  CardHeader
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { TimeContextControls } from '../../components/time-context-controls';
-import { useTimeContext, type ThresholdPreset } from '../../contexts/time-context';
+import { useTimeContext } from '../../contexts/time-context';
 import { usePageView } from '../../hooks/use-page-view';
 import { useSettings } from '../../hooks/use-settings';
 import { Layout as DashboardLayout } from '../../layouts/dashboard';
@@ -41,10 +35,10 @@ import { useESP32Aggregates } from '@/hooks/use-esp32';
 import { buildThresholdEvents } from '@/utils/build-threshold-events';
 import type { ThresholdEvent, ThresholdMetric } from '@/types/esp32-events';
 import type { ESP32Aggregate } from '@/types/esp32-data';
+import { ThreeMpSharp } from '@mui/icons-material';
 
 const EVENT_BUCKET_SECONDS = 3600;
 const EVENT_SOURCE_WINDOW_DAYS = 30;
-const THRESHOLD_PRESETS = [0.05, 0.1, 0.15, 0.2, 0.25] as const;
 
 const categories: Array<{ label: string; value: 'all' | AlertCategory }> = [
   { label: 'All', value: 'all' },
@@ -93,18 +87,6 @@ const capitalizeFirst = (text: string): string => (
   text ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text
 );
 
-const toSeverityLabel = (severity: 'slight' | 'moderate' | 'extreme'): string => (
-  severity === 'extreme' ? 'strong' : severity
-);
-
-const toTitleTextCase = (text: string): string => {
-  const trimmed = text.trim().replace(/\.$/, '');
-  if (!trimmed) return '';
-  const lower = trimmed.toLowerCase();
-  const withRh = lower.replace(/\brh\b/g, 'RH');
-  return `${withRh.charAt(0).toUpperCase()}${withRh.slice(1)}`;
-};
-
 const toMs = (iso: string): number => new Date(iso).getTime();
 
 const getDurationStatus = (event: ThresholdEvent): Extract<AlertStatus, 'short' | 'sustained'> => (
@@ -131,6 +113,24 @@ const describeTimeOfDaySpan = (event: ThresholdEvent): string => {
   const startLabel = getTimeOfDay(new Date(event.start_bucket));
   const endLabel = getTimeOfDay(new Date(event.end_bucket));
   return startLabel === endLabel ? startLabel : `${startLabel} to ${endLabel}`;
+};
+
+const formatTimeOfDaySpanLabel = (event: ThresholdEvent): string => {
+  return describeTimeOfDaySpan(event)
+    .replace(' to ', ' and ')
+    .split(' ')
+    .map((part) => toSentenceCase(part))
+    .join(' ');
+};
+
+const formatEventTimeRangeLabel = (startAt: number, endAt: number, isActive = false): string => {
+  const start = new Date(startAt);
+  const endMs = isActive ? Date.now() : endAt;
+  const end = new Date(endMs);
+  const startLabel = format(start, 'haaa');
+  const endLabel = isActive ? 'now' : format(end, 'haaa');
+  const durationHours = Math.max(0, Math.round((endMs - startAt) / (1000 * 60 * 60)));
+  return `${startLabel} — ${endLabel} (${durationHours}h)`;
 };
 
 const getMetricDirectionWord = (
@@ -167,6 +167,29 @@ const getMetricSeverity = (
   return getSeverityFromDeviation(Math.abs(deviation), event.settings.thresholdPct);
 };
 
+function toSentenceCase(str: string) {
+  if (!str) {
+    return "";
+  }
+  // Convert the entire string to lowercase first for consistency
+  str = str.toLowerCase(); 
+
+  // Capitalize the first character and concatenate with the rest of the string
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+const toSeverityLabel = (severity: 'slight' | 'moderate' | 'extreme'): string => (
+  severity === 'extreme' ? 'strong' : severity
+);
+
+const toTitleTextCase = (text: string): string => {
+  const trimmed = text.trim().replace(/\.$/, '');
+  if (!trimmed) return '';
+  const lower = trimmed.toLowerCase();
+  const withRh = lower.replace(/\brh\b/g, 'RH');
+  return `${withRh.charAt(0).toUpperCase()}${withRh.slice(1)}`;
+};
+
 const buildEventTitle = (event: ThresholdEvent): string => {
   const rhDir = getMetricDirectionWord(event, 'rh_avg');
   const moistureDir = getMetricDirectionWord(event, 'moisture_abs');
@@ -176,21 +199,21 @@ const buildEventTitle = (event: ThresholdEvent): string => {
 
   if (breachedCount === 1) {
     if (tempDir) {
-      const sev = capitalizeFirst(
+      const sev = toSentenceCase(
         toSeverityLabel(getMetricSeverity(event, 'temp_f_avg') ?? getEventSeverity(event))
       );
       const shape = tempDir === 'peak' ? 'spike' : 'dip';
       return toTitleTextCase(`${sev} temperature ${shape}`);
     }
     if (rhDir) {
-      const sev = capitalizeFirst(
+      const sev = toSentenceCase(
         toSeverityLabel(getMetricSeverity(event, 'rh_avg') ?? getEventSeverity(event))
       );
       const shape = rhDir === 'peak' ? 'spike' : 'dip';
       return toTitleTextCase(`${sev} RH ${shape}`);
     }
     if (moistureDir) {
-      const sev = capitalizeFirst(
+      const sev = toSentenceCase(
         toSeverityLabel(getMetricSeverity(event, 'moisture_abs') ?? getEventSeverity(event))
       );
       const shape = moistureDir === 'peak' ? 'spike' : 'dip';
@@ -199,10 +222,10 @@ const buildEventTitle = (event: ThresholdEvent): string => {
   }
 
   if (moistureDir && tempDir && rhDir) {
-    const moistureSeverity = capitalizeFirst(
+    const moistureSeverity = toSentenceCase(
       toSeverityLabel(getMetricSeverity(event, 'moisture_abs') ?? getEventSeverity(event))
     );
-    const tempSeverity = capitalizeFirst(
+    const tempSeverity = toSentenceCase(
       toSeverityLabel(getMetricSeverity(event, 'temp_f_avg') ?? getEventSeverity(event))
     );
 
@@ -232,7 +255,7 @@ const buildEventTitle = (event: ThresholdEvent): string => {
   }
 
   if (moistureDir) {
-    const moistureSeverity = capitalizeFirst(
+    const moistureSeverity = toSentenceCase(
       toSeverityLabel(getMetricSeverity(event, 'moisture_abs') ?? getEventSeverity(event))
     );
     const rhDirection = moistureDir === 'peak' ? 'up' : 'down';
@@ -241,7 +264,7 @@ const buildEventTitle = (event: ThresholdEvent): string => {
   }
 
   if (tempDir) {
-    const tempSeverity = capitalizeFirst(
+    const tempSeverity = toSentenceCase(
       toSeverityLabel(getMetricSeverity(event, 'temp_f_avg') ?? getEventSeverity(event))
     );
     const rhDirection = tempDir === 'peak' ? 'down' : 'up';
@@ -386,12 +409,49 @@ const eventToAlert = (
   };
 };
 
-const Page: NextPage = () => {
+interface AlertsTableProps {
+  showDrawer?: boolean;
+  onSelectedAlertChange?: (alert: Alert | null) => void;
+  onHoveredAlertChange?: (alert: Alert | null) => void;
+  preloadedAggregates?: ESP32Aggregate[];
+}
+
+const AlertsTableComponent = ({
+  showDrawer = true,
+  onSelectedAlertChange,
+  onHoveredAlertChange,
+  preloadedAggregates
+}: AlertsTableProps) => {
   const settings = useSettings();
   const theme = useTheme();
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const { from, to, thresholdPct, setThresholdPct, thresholdBands } = useTimeContext();
+  const { from, to, thresholdBands } = useTimeContext();
+  const eventSourceFrom = useMemo(
+    () => new Date(to.getTime() - EVENT_SOURCE_WINDOW_DAYS * 24 * 60 * 60 * 1000),
+    [to]
+  );
+  const {
+    data: aggregatesData,
+  } = useESP32Aggregates(
+    {
+      start_ts: eventSourceFrom.toISOString(),
+      end_ts: to.toISOString(),
+      bucket: EVENT_BUCKET_SECONDS, // fixed event standard
+      order_desc: false,
+      limit: 1000,
+    },
+    {
+      enabled: !preloadedAggregates,
+      staleTime: 60_000,
+    }
+  );
+  const aggregates = useMemo(
+    () => preloadedAggregates ?? aggregatesData?.aggregates ?? [],
+    [aggregatesData?.aggregates, preloadedAggregates]
+  );
+
+  const { thresholdPct } = useTimeContext();
   const thresholdBandVisibility = useMemo(
     () => ({
       temp: thresholdBands.includes('temp'),
@@ -400,25 +460,11 @@ const Page: NextPage = () => {
     }),
     [thresholdBands]
   );
-  const eventSourceFrom = useMemo(
-    () => new Date(to.getTime() - EVENT_SOURCE_WINDOW_DAYS * 24 * 60 * 60 * 1000),
-    [to]
-  );
-  const { 
-    data: aggregatesData, 
-  } = useESP32Aggregates({
-    start_ts: eventSourceFrom.toISOString(),
-    end_ts: to.toISOString(),
-    bucket: EVENT_BUCKET_SECONDS, // fixed event standard
-    order_desc: true,
-    limit: 1000,
-  });
-  const aggregates = useMemo(() => aggregatesData?.aggregates || [], [aggregatesData]);
 
   const events = useMemo(
     () =>
       buildThresholdEvents(aggregates, {
-        thresholdPct,
+        thresholdPct: thresholdPct,
         expectedSamplePeriodSeconds: 2,
         baselineMethod: 'hour-of-day-mean',
       }),
@@ -491,7 +537,7 @@ const Page: NextPage = () => {
 
     router.push(
       {
-        pathname: paths.dashboard.alerts,
+        pathname: router.pathname,
         query: nextQuery
       },
       undefined,
@@ -515,7 +561,7 @@ const Page: NextPage = () => {
 
     router.push(
       {
-        pathname: paths.dashboard.alerts,
+        pathname: router.pathname,
         query: nextQuery
       },
       undefined,
@@ -540,7 +586,7 @@ const Page: NextPage = () => {
 
     router.push(
       {
-        pathname: paths.dashboard.alerts,
+        pathname: router.pathname,
         query: nextQuery
       },
       undefined,
@@ -549,12 +595,18 @@ const Page: NextPage = () => {
   }, [router, selectedCategory, selectedStatus]);
 
   const alerts = useMemo(() => {
-    return allEventAlerts.filter((alert) => {
+    const filtered = allEventAlerts.filter((alert) => {
       const categoryMatch = selectedCategory === 'all' || alert.category === selectedCategory;
       const statusMatch = selectedStatus === 'all' || alert.status === selectedStatus;
-      return categoryMatch && statusMatch;
+      const eventStartTime = alert.startAt ?? alert.createdAt;
+      const eventEndTime = alert.endAt ?? alert.createdAt;
+      const timeMatch =
+        eventStartTime <= to.getTime() &&
+        eventEndTime >= from.getTime();
+      return categoryMatch && statusMatch && timeMatch;
     });
-  }, [allEventAlerts, selectedCategory, selectedStatus]);
+    return filtered;
+  }, [allEventAlerts, selectedCategory, selectedStatus, from, to]);
 
   const handleAlertSave = useCallback((_alertId: string, _updates: Partial<Alert>) => {
     // Event alerts are derived from aggregate data and threshold settings; edits are not persisted.
@@ -577,296 +629,251 @@ const Page: NextPage = () => {
   )).length;
   const selectedAlert = alerts.find((alert) => alert.id === selectedAlertId) || null;
 
+  useEffect(() => {
+    onSelectedAlertChange?.(selectedAlert);
+  }, [onSelectedAlertChange, selectedAlert]);
+  const rowsWithDayHeaders = useMemo(() => {
+    const rows: Array<
+      | { kind: 'day'; key: string; label: string }
+      | { kind: 'alert'; key: string; alert: Alert }
+      | { kind: 'empty'; key: string; message: string }
+    > = [];
+
+    let previousDayKey: string | null = null;
+    const now = new Date();
+    const todayKey = format(now, 'yyyy-MM-dd');
+
+    if (alerts.length === 0) {
+      rows.push({
+        kind: 'day',
+        key: `day-${todayKey}`,
+        label: `Today, ${format(now, 'MMM dd')}`
+      });
+      rows.push({
+        kind: 'empty',
+        key: 'empty-state',
+        message: 'No events in this time window'
+      });
+      return rows;
+    }
+
+    for (const alert of alerts) {
+      const alertDate = new Date(alert.createdAt);
+      const dayKey = format(alertDate, 'yyyy-MM-dd');
+
+      if (dayKey !== previousDayKey) {
+        rows.push({
+          kind: 'day',
+          key: `day-${dayKey}`,
+          label: dayKey === todayKey
+            ? `Today, ${format(alertDate, 'MMM dd')}`
+            : format(alertDate, 'EEE, MMM dd')
+        });
+        previousDayKey = dayKey;
+      }
+
+      rows.push({
+        kind: 'alert',
+        key: alert.id,
+        alert
+      });
+    }
+
+    return rows;
+  }, [alerts]);
+
   return (
-    <>
-      <Head>
-        <title>Dashboard: Alerts | Devias Kit PRO</title>
-      </Head>
-      <Box
-        component="main"
-        sx={{
-          display: 'flex',
-          flex: '1 1 auto',
-          height: { lg: 'calc(100vh - 64px)' },
-          overflow: 'hidden',
-          py: 4
-        }}
-      >
-        <Container
-          maxWidth={settings.stretch ? false : 'xl'}
-          sx={{
-            display: 'flex',
-            flex: '1 1 auto',
-            height: '100%',
-            minHeight: 0
-          }}
-        >
-          <Box
-            ref={rootRef}
-            sx={{
-              display: 'flex',
-              flex: '1 1 auto',
-              height: '100%',
-              minHeight: 0,
-              overflow: 'hidden',
-              position: 'relative'
-            }}
-          >
-            <Box
-              sx={{
-                flex: '1 1 auto',
-                minWidth: 0,
-                overflowY: 'auto',
-                pr: { lg: 3 }
-              }}
-            >
-              <Stack spacing={3}>
-                <Stack
-                  direction={{ xs: 'column', md: 'row' }}
-                  justifyContent="space-between"
-                  spacing={2}
-                >
-                  <Stack spacing={1}>
-                    <Typography variant="h4">
-                      Alerts
-                    </Typography>
-                    <Typography
-                      color="text.secondary"
-                      variant="body2"
-                    >
-                      Event stream built from 5-minute aggregate threshold breaches (latest 1000 buckets).
-                    </Typography>
-                    {/* <Chip
-                      label={`${format(from, 'MMM d, HH:mm')} - ${format(to, 'MMM d, HH:mm')}`}
-                      size="small"
-                      sx={{ width: 'fit-content' }}
-                      variant="outlined"
-                    /> */}
-                  </Stack>
-                  <Stack
-                    alignItems={{ xs: 'stretch', md: 'center' }}
-                    direction={{ xs: 'column', md: 'row' }}
-                    spacing={2}
-                  >
-                    <FormControl 
-                      size="small" 
-                      sx={{ minWidth: 130 }}>
-                      <InputLabel id="alerts-threshold-label">Threshold</InputLabel>
-                      <Select
-                        label="Threshold"
-                        labelId="alerts-threshold-label"
-                        value={String(thresholdPct)}
-                        onChange={(event) => setThresholdPct(Number(event.target.value) as ThresholdPreset)}
-                      >
-                        {THRESHOLD_PRESETS.map((preset) => (
-                          <MenuItem 
-                            key={preset} 
-                            value={String(preset)}>
-                            ±{Math.round(preset * 100)}%
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                    <TimeContextControls showBucket={false} />
-                  </Stack>
-                </Stack>
-                {/* <Grid
-                  container
-                  spacing={2}
-                >
-                  <Grid xs={12}
-                    md={4}>
-                    <Card>
-                      <CardContent>
-                        <Typography 
-                          color="text.secondary"
-                          variant="overline">Events</Typography>
-                        <Typography variant="h4">{openCount}</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid xs={12}
-                    md={4}>
-                    <Card>
-                      <CardContent>
-                        <Typography color="text.secondary"
-                          variant="overline">Sustained Events</Typography>
-                        <Typography variant="h4">{environmentOpenCount}</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                  <Grid xs={12}
-                    md={4}>
-                    <Card>
-                      <CardContent>
-                        <Typography color="text.secondary"
-                            variant="overline">Short Events</Typography>
-                        <Typography variant="h4">{systemOpenCount}</Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                </Grid> */}
-                <Card>
-                  <CardContent>
-                    <Stack
-                      direction={{ xs: 'column', md: 'row' }}
-                      spacing={2}
-                    >
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{ flexWrap: 'wrap' }}
-                      >
-                        {categories.map((item) => (
-                          <Chip
-                            clickable
-                            key={item.value}
-                            label={item.label}
-                            onClick={() => updateFilters({ category: item.value })}
-                            variant={selectedCategory === item.value ? 'filled' : 'outlined'}
-                          />
-                        ))}
-                      </Stack>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{ flexWrap: 'wrap' }}
-                      >
-                        {statuses.map((item) => (
-                          <Chip
-                            clickable
-                            key={item.value}
-                            label={item.label}
-                            onClick={() => updateFilters({ status: item.value })}
-                            variant={selectedStatus === item.value ? 'filled' : 'outlined'}
-                          />
-                        ))}
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                  <Divider />
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Alert</TableCell>
-                        <TableCell>Deviation</TableCell>
-                        <TableCell>Duration</TableCell>
-                        <TableCell>Location</TableCell>
-                        <TableCell>Age</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {alerts.map((alert) => (
-                        <TableRow
-                          hover
-                          key={alert.id}
-                          onClick={() => handleAlertSelect(alert.id)}
-                          selected={selectedAlertId === alert.id}
+    <Box
+      ref={rootRef}
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        width: '100%',
+        minWidth: 0
+      }}
+    >
+      <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
+        <Stack spacing={3}>
+          <Card>
+            {/* <CardHeader 
+              title={`Events`} 
+              sx={{ mb: 2 }} /> */}
+            <Divider />
+            <Table>
+              <TableHead>
+                {/* <TableRow>
+                  <TableCell>Alert</TableCell>
+                  <TableCell>Deviation</TableCell>
+                  {/* <TableCell>Duration</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Age</TableCell> 
+                </TableRow> */}
+              </TableHead>
+              <TableBody>
+                {rowsWithDayHeaders.map((row) => {
+                  if (row.kind === 'day') {
+                    return (
+                      <TableRow 
+                        key={row.key} 
+                        sx={{ backgroundColor: 'action.hover' }}>
+                        <TableCell
+                          colSpan={2}
                           sx={{
-                            cursor: 'pointer',
-                            '&:hover': {
-                              backgroundColor: alpha(theme.palette.primary.main, 0.08)
-                            },
-                            '&.Mui-selected, &.Mui-selected:hover': {
-                              backgroundColor: alpha(theme.palette.primary.main, 0.08)
-                            }
+                            py: 1,
+                            borderBottomColor: 'divider'
                           }}
                         >
-                          <TableCell>
-                            <Stack spacing={0.5}>
-                              <Typography variant="subtitle2">{alert.title}</Typography>
-                              <Typography color="text.secondary"
-                                variant="body2">{alert.description}</Typography>
-                            </Stack>
-                          </TableCell>
-                          <TableCell>
-                            <Stack 
-                              spacing={0.75} 
-                              sx={{ width: 'fit-content' }}>
-                              {(['temp_f_avg', 'rh_avg', 'moisture_abs'] as const).map((metric) => {
-                                const event = eventById.get(alert.id);
-                                const deviation = event?.peakDeviationPctByMetric[metric];
-                                const thresholdPctValue = event?.settings.thresholdPct ?? thresholdPct;
-                                const absDeviation = Math.abs(deviation ?? 0);
-                                const metricSeverity = getSeverityFromDeviation(absDeviation, thresholdPctValue);
-                                const rounded = typeof deviation === 'number' ? Math.round(deviation * 10) / 10 : 0;
-                                const sign = rounded > 0 ? '+' : '';
-                                const label =
-                                  metric === 'rh_avg'
-                                    ? `${sign}${rounded}% RH`
-                                    : metric === 'temp_f_avg'
-                                      ? `${sign}${rounded}% °F`
-                                      : `${sign}${rounded}% AH`;
-                                const isPositive = rounded > 0;
+                          <Typography
+                            color="text.primary"
+                            variant="overline"
+                            sx={{ opacity: 0.7, letterSpacing: 0.8 }}
+                          >
+                            {row.label}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  if (row.kind === 'empty') {
+                    return (
+                      <TableRow key={row.key}>
+                        <TableCell 
+                          colSpan={2} 
+                          sx={{ py: 3 }}>
+                          <Typography   
+                            color="text.secondary" 
+                            variant="body2">
+                            {row.message}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  const alert = row.alert;
+                  const event = eventById.get(alert.id);
+                  return (
+                    <TableRow
+                      hover
+                      key={row.key}
+                      onClick={() => handleAlertSelect(alert.id)}
+                      onMouseEnter={() => onHoveredAlertChange?.(alert)}
+                      onMouseLeave={() => onHoveredAlertChange?.(null)}
+                      selected={selectedAlertId === alert.id}
+                      sx={{
+                        cursor: 'pointer',
+                        '&.MuiTableRow-hover:hover': {
+                          backgroundColor: `${alpha(theme.palette.primary.main, 0.12)} !important`
+                        },
+                        '&.Mui-selected, &.Mui-selected:hover': {
+                          backgroundColor: `${alpha(theme.palette.primary.main, 0.12)} !important`
+                        }
+                      }}
+                    >
+                      <TableCell>
+                        <Stack spacing={0.5}>
+                          <Typography 
+                            variant="subtitle2" 
+                            sx={{ whiteSpace: 'pre-line' }}>
+                            {alert.title}
+                          </Typography>
+                          <Typography color="text.secondary"
+                            variant="body2">
+                            {alert.startAt && alert.endAt
+                              ? formatEventTimeRangeLabel(alert.startAt, alert.endAt, Boolean(alert.isActive))
+                              : (event ? formatTimeOfDaySpanLabel(event) : 'No event context')}
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ verticalAlign: 'top' }}
+                      >
+                        <Stack
+                          spacing={0.75}
+                          sx={{
+                            width: 'fit-content',
+                            ml: 'auto',
+                            alignItems: 'flex-end'
+                          }}
+                        >
+                          {(['temp_f_avg', 'rh_avg', 'moisture_abs'] as const).map((metric) => {
+                            const deviation = event?.peakDeviationPctByMetric[metric];
+                            const thresholdPctValue = event?.settings.thresholdPct ?? thresholdPct;
+                            const absDeviation = Math.abs(deviation ?? 0);
+                            const metricSeverity = getSeverityFromDeviation(absDeviation, thresholdPctValue);
+                            const rounded = typeof deviation === 'number' ? Math.round(deviation * 10) / 10 : 0;
+                            const sign = rounded > 0 ? '+' : '';
+                            const label =
+                              metric === 'rh_avg'
+                                ? `${sign}${rounded}% RH`
+                                : metric === 'temp_f_avg'
+                                  ? `${sign}${rounded}% °F`
+                                  : `${sign}${rounded}% AH`;
+                            const isPositive = rounded > 0;
                             const baseColor = metric === 'temp_f_avg'
                               ? theme.palette.primary.main
                               : metric === 'rh_avg'
                                 ? theme.palette.warning.main
                                 : theme.palette.info.main;
-                                const tintAlpha =
-                                  metricSeverity === 'extreme' ? 0.34 :
-                                  metricSeverity === 'moderate' ? 0.22 :
-                                  metricSeverity === 'slight' ? 0.12 : 0;
-                                const chipSx = {
-                                  color: metricSeverity ? baseColor : theme.palette.text.primary,
-                                  backgroundColor: metricSeverity ? alpha(baseColor, tintAlpha) : theme.palette.common.white,
-                                  borderColor: metricSeverity
-                                    ? (isPositive ? alpha(baseColor, 0.9) : 'transparent')
-                                    : theme.palette.divider,
-                                  borderWidth: 1,
-                                  borderStyle: 'solid'
-                                };
-                                return (
-                                  <Chip
-                                    key={metric}
-                                    label={label}
-                                    size="small"
-                                    variant={metricSeverity ? (isPositive ? 'outlined' : 'filled') : 'outlined'}
-                                    sx={chipSx}
-                                  />
-                                );
-                              })}
-                            </Stack>
-                          </TableCell>
-                          <TableCell>{typeof alert.value === 'number' ? formatDurationBucket(alert.value * 1000) : 'N/A'}</TableCell>
-                          <TableCell>{alert.locationName}</TableCell>
-                          <TableCell>{formatDistanceToNowStrict(alert.createdAt)} ago</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Card>
-                <Stack direction="row"
-justifyContent="flex-end">
-                  <Button
-                    component={NextLink}
-                    href={paths.dashboard.index}
-                    variant="text"
-                  >
-                    Back to Dashboard
-                  </Button>
-                </Stack>
-              </Stack>
-            </Box>
-            <AlertDetailsDrawer
-              alert={selectedAlert}
-              container={rootRef.current}
-              thresholdBandVisibility={thresholdBandVisibility}
-              onClose={handleDrawerClose}
-              onSave={handleAlertSave}
-              open={Boolean(selectedAlertId)}
-            />
-          </Box>
-        </Container>
+                            const tintAlpha =
+                              metricSeverity === 'extreme' ? 0.34 :
+                              metricSeverity === 'moderate' ? 0.22 :
+                              metricSeverity === 'slight' ? 0.12 : 0;
+                            const chipSx = {
+                              color: metricSeverity ? baseColor : theme.palette.text.primary,
+                              backgroundColor: metricSeverity ? alpha(baseColor, tintAlpha) : theme.palette.common.white,
+                              borderColor: metricSeverity
+                                ? (isPositive ? alpha(baseColor, 0.9) : 'transparent')
+                                : theme.palette.divider,
+                              borderWidth: 1,
+                              borderStyle: 'solid'
+                            };
+                            return (
+                              <Chip
+                                key={metric}
+                                label={label}
+                                size="small"
+                                variant={metricSeverity ? (isPositive ? 'outlined' : 'filled') : 'outlined'}
+                                sx={chipSx}
+                              />
+                            );
+                          })}
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+        <Stack  
+            direction="row"
+            justifyContent="flex-end">
+            <Button
+              component={NextLink}
+              href={paths.dashboard.alerts}
+              variant="text"
+            >
+              See all events
+            </Button>
+          </Stack>
+        </Stack>
       </Box>
-    </>
+      {showDrawer && (
+        <AlertDetailsDrawer
+          alert={selectedAlert}
+          container={rootRef.current}
+          thresholdBandVisibility={thresholdBandVisibility}
+          onClose={handleDrawerClose}
+          onSave={handleAlertSave}
+          open={Boolean(selectedAlertId)}
+        />
+      )}
+    </Box>
   );
 };
 
-Page.getLayout = (page) => (
-  <DashboardLayout>
-    {page}
-  </DashboardLayout>
-);
-
-export default Page;
+export const AlertsTable = memo(AlertsTableComponent);
+AlertsTable.displayName = 'AlertsTable';

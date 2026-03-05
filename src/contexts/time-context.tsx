@@ -5,9 +5,18 @@ import { useRouter } from 'next/router';
 
 export type TimeWindow = '15m' | '1h' | '6h' | '24h' | '7d' | '30d';
 export type TimeBucket = '2s' | '10s' | '1m' | '5m' | '1h';
+export type ThresholdPreset = 0.05 | 0.1 | 0.15 | 0.2 | 0.25;
+export type ThresholdBandKey =
+  | 'temp'
+  | 'moisture'
+  | 'rh'
+  | 'rh_observed'
+  | 'rh_expected';
 
 const DEFAULT_WINDOW: TimeWindow = '30d';
 const DEFAULT_BUCKET: TimeBucket = '1h';
+const DEFAULT_THRESHOLD_PCT: ThresholdPreset = 0.05;
+const DEFAULT_THRESHOLD_BANDS: ThresholdBandKey[] = ['temp', 'moisture', 'rh_expected'];
 
 const WINDOWS: TimeWindow[] = ['15m', '1h', '6h', '24h', '7d', '30d'];
 const BUCKETS: TimeBucket[] = ['2s', '10s', '1m', '5m', '1h'];
@@ -96,11 +105,15 @@ interface TimeContextValue {
   bucketLabel: TimeBucket;
   bucketValue: number;
   allowedBuckets: TimeBucket[];
+  thresholdPct: ThresholdPreset;
+  thresholdBands: ThresholdBandKey[];
   from: Date;
   to: Date;
   setTo: (to: Date) => void;
   setWindow: (window: TimeWindow) => void;
   setBucket: (bucket: TimeBucket) => void;
+  setThresholdPct: (thresholdPct: ThresholdPreset) => void;
+  setThresholdBands: (bands: ThresholdBandKey[]) => void;
 }
 
 const TimeContext = createContext<TimeContextValue | undefined>(undefined);
@@ -148,6 +161,8 @@ export const TimeProvider: FC<TimeProviderProps> = ({ children }) => {
   const router = useRouter();
   const [window, setWindowState] = useState<TimeWindow>(DEFAULT_WINDOW);
   const [bucket, setBucketState] = useState<TimeBucket>(DEFAULT_BUCKET);
+  const [thresholdPct, setThresholdPct] = useState<ThresholdPreset>(DEFAULT_THRESHOLD_PCT);
+  const [thresholdBands, setThresholdBands] = useState<ThresholdBandKey[]>(DEFAULT_THRESHOLD_BANDS);
   const [to, setTo] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -157,15 +172,29 @@ export const TimeProvider: FC<TimeProviderProps> = ({ children }) => {
 
     const queryWindow = asWindow(router.query.tcWindow);
     const queryBucket = asBucket(router.query.tcBucket);
-    const nextWindow = queryWindow ?? window;
-    const requestedBucket = queryBucket ?? bucket;
+    const nextWindow = queryWindow ?? DEFAULT_WINDOW;
+    const requestedBucket = queryBucket ?? DEFAULT_BUCKET;
     const resolvedBucket = getFallbackBucketForWindow(nextWindow, requestedBucket);
 
-    if (queryWindow) setWindowState(nextWindow);
-    if (resolvedBucket !== bucket) setBucketState(resolvedBucket);
+    if (window !== nextWindow) {
+      setWindowState(nextWindow);
+    }
+    if (bucket !== resolvedBucket) {
+      setBucketState(resolvedBucket);
+    }
 
     // Keep URL/query state valid if someone manually enters a forbidden bucket.
-    if ((queryWindow && queryWindow !== window) || (queryBucket && queryBucket !== resolvedBucket)) {
+    const hasAnyTimeParam = Boolean(queryWindow || queryBucket);
+    const shouldReplace =
+      hasAnyTimeParam &&
+      (
+        queryWindow !== nextWindow ||
+        queryBucket !== resolvedBucket ||
+        !queryWindow ||
+        !queryBucket
+      );
+
+    if (shouldReplace) {
       router.replace(
         {
           pathname: router.pathname,
@@ -179,7 +208,7 @@ export const TimeProvider: FC<TimeProviderProps> = ({ children }) => {
         { shallow: true }
       ).catch(() => undefined);
     }
-  }, [router, router.isReady, router.query.tcBucket, router.query.tcWindow, bucket, window]);
+  }, [bucket, router, router.isReady, router.query.tcBucket, router.query.tcWindow, window]);
 
   const syncQuery = useCallback(
     (nextWindow: TimeWindow, nextBucket: TimeBucket) => {
@@ -231,13 +260,17 @@ export const TimeProvider: FC<TimeProviderProps> = ({ children }) => {
       bucketLabel: bucket,
       bucketValue: getTimeBucketSeconds(bucket),
       allowedBuckets: getAllowedBucketsForWindow(window),
+      thresholdPct,
+      thresholdBands,
       to,
       setTo,
       from: getFromDate(to, window),
       setWindow,
-      setBucket
+      setBucket,
+      setThresholdPct,
+      setThresholdBands
     }),
-    [bucket, window, setBucket, setWindow, to]
+    [bucket, window, thresholdPct, thresholdBands, setBucket, setWindow, to]
   );
 
   return (

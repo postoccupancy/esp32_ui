@@ -1,11 +1,13 @@
+/* eslint-disable react/jsx-max-props-per-line */
 import type { ChangeEvent, FC } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import XIcon from '@untitled-ui/icons-react/build/esm/X';
 import type { Theme } from '@mui/material';
 import {
   Box,
   Button,
+  Card,
   Divider,
   Drawer,
   FormControl,
@@ -19,8 +21,8 @@ import {
   Typography,
   useMediaQuery
 } from '@mui/material';
-import { format } from 'date-fns';
 import type { Alert } from '../../../types/alert';
+import { TimeSeriesChart } from '../../../pages/components/time-series';
 
 interface AlertDetailsDrawerProps {
   alert?: Alert | null;
@@ -28,6 +30,9 @@ interface AlertDetailsDrawerProps {
   onClose?: () => void;
   onSave?: (alertId: string, updates: Partial<Alert>) => void;
   open?: boolean;
+  normalizeDeviation?: boolean;
+  thresholdBandVisibility?: { temp: boolean; rh: boolean; moisture: boolean };
+  desktopInitialOffsetTop?: number;
 }
 
 type EditForm = {
@@ -37,18 +42,28 @@ type EditForm = {
   status: Alert['status'];
   threshold: string;
 };
+const toAbsoluteHumidity = (tempF: number, rh: number): number | null => {
+  const tempC = (tempF - 32) * (5 / 9);
+  const saturationVp = 6.112 * Math.exp((17.67 * tempC) / (tempC + 243.5));
+  const absoluteHumidity = (saturationVp * rh * 2.1674) / (273.15 + tempC);
+  return Number.isFinite(absoluteHumidity) ? absoluteHumidity : null;
+};
 
-export const AlertDetailsDrawer: FC<AlertDetailsDrawerProps> = (props) => {
+const AlertDetailsDrawerComponent: FC<AlertDetailsDrawerProps> = (props) => {
   const {
     alert,
     container,
     onClose,
     onSave,
     open = false,
+    normalizeDeviation = false,
+    thresholdBandVisibility = { temp: true, rh: true, moisture: true },
+    desktopInitialOffsetTop = 80,
     ...other
   } = props;
   const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
   const desktopDrawerWidth = 420;
+  const desktopDrawerGap = 32;
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [formState, setFormState] = useState<EditForm>({
     title: '',
@@ -78,8 +93,96 @@ export const AlertDetailsDrawer: FC<AlertDetailsDrawerProps> = (props) => {
       return '';
     }
 
-    return format(alert.createdAt, 'MMM dd, yyyy HH:mm:ss');
+    return new Date(alert.createdAt).toLocaleString();
   }, [alert]);
+
+  const startEnd = useMemo(() => {
+    if (!alert?.startAt || !alert?.endAt) return '';
+    const startLabel = new Date(alert.startAt).toLocaleString();
+    if (alert.isActive) {
+      const endDateLabel = new Date(alert.endAt).toLocaleDateString();
+      return `${startLabel} — ${endDateLabel}, now`;
+    }
+    return `${startLabel} — ${new Date(alert.endAt).toLocaleString()}`;
+  }, [alert]);
+
+  const displayValue = useMemo(() => {
+    if (!alert || typeof alert.value !== 'number') {
+      return 'N/A';
+    }
+
+    if (alert.unit === 'duration') {
+      const liveSeconds = alert.isActive && alert.startAt
+        ? Math.round((Date.now() - alert.startAt) / 1000)
+        : Math.round(alert.value);
+      const totalSeconds = Math.max(0, liveSeconds);
+      const totalMinutes = Math.round(totalSeconds / 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    return `${alert.value}${alert.unit ? ` ${alert.unit}` : ''}`;
+  }, [alert]);
+
+  const previewTimeSeries = useMemo(() => {
+    const preview = alert?.preview;
+    if (!preview) return null;
+
+    const tempValues = preview.temp.values;
+    const tempBaselines = preview.temp.baselines;
+    const rhValues = preview.rh.values;
+    const rhBaselines = preview.rh.baselines;
+
+    const expectedRh = rhValues.map((_, i) => {
+      const temp = tempValues[i];
+      const tempBase = tempBaselines[i];
+      const rhBase = rhBaselines[i];
+      if (typeof temp !== 'number' || typeof tempBase !== 'number' || tempBase === 0 || typeof rhBase !== 'number') {
+        return null;
+      }
+      const tempDeviationRatio = (temp - tempBase) / tempBase;
+      const expected = rhBase * (1 - tempDeviationRatio);
+      return Number.isFinite(expected) ? expected : null;
+    });
+
+    const moistureValues = tempValues.map((temp, i) => {
+      const rh = rhValues[i];
+      if (typeof temp !== 'number' || typeof rh !== 'number') return null;
+      return toAbsoluteHumidity(temp, rh);
+    });
+    const moistureBaselines = tempBaselines.map((tempBase, i) => {
+      const rhBase = rhBaselines[i];
+      if (typeof tempBase !== 'number' || typeof rhBase !== 'number') return null;
+      return toAbsoluteHumidity(tempBase, rhBase);
+    });
+
+    const expectedBaselineForNormalized = expectedRh;
+
+    return {
+      tooltipCategories: preview.categories,
+      chartSeries: [
+        { name: 'Temperature (°F)', data: tempValues },
+        { name: 'Relative Humidity (%)', data: rhValues },
+        { name: 'Expected RH (%)', data: expectedRh },
+        { name: 'Moisture (g/m³)', data: moistureValues },
+      ],
+      overlaySeries: [
+        { name: 'Temperature Baseline (30d hour-of-day)', data: tempBaselines },
+        {
+          name: normalizeDeviation
+            ? 'Expected RH Baseline for Observed RH (%)'
+            : 'RH Baseline (30d hour-of-day, %)',
+          data: normalizeDeviation ? expectedBaselineForNormalized : rhBaselines,
+        },
+        {
+          name: 'Expected RH Baseline (%)',
+          data: normalizeDeviation ? expectedBaselineForNormalized : rhBaselines,
+        },
+        { name: 'Moisture Baseline (g/m³)', data: moistureBaselines },
+      ],
+    };
+  }, [alert?.preview, normalizeDeviation]);
 
   const handleTextChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFormState((prevState) => ({
@@ -173,8 +276,11 @@ sx={{ p: 3 }}>
                   value={formState.severity}
                 >
                   <MenuItem value="info">Info</MenuItem>
+                  <MenuItem value="slight">Slight</MenuItem>
                   <MenuItem value="warning">Warning</MenuItem>
+                  <MenuItem value="moderate">Moderate</MenuItem>
                   <MenuItem value="critical">Critical</MenuItem>
+                  <MenuItem value="extreme">Extreme</MenuItem>
                 </Select>
               </FormControl>
               <FormControl fullWidth>
@@ -188,6 +294,8 @@ sx={{ p: 3 }}>
                   <MenuItem value="open">Open</MenuItem>
                   <MenuItem value="acknowledged">Acknowledged</MenuItem>
                   <MenuItem value="resolved">Resolved</MenuItem>
+                  <MenuItem value="short">Short</MenuItem>
+                  <MenuItem value="sustained">Sustained</MenuItem>
                 </Select>
               </FormControl>
               <TextField
@@ -211,6 +319,33 @@ variant="outlined">
             </>
           ) : (
             <>
+              <Box>
+                {previewTimeSeries && (
+                  <Card sx={{ p: 1 }}>
+                    <TimeSeriesChart
+                      chartHeight={220}
+                      chartSeries={previewTimeSeries.chartSeries}
+                      overlaySeries={previewTimeSeries.overlaySeries}
+                      showOverlayLines={false}
+                      equalizeThresholdBands
+                      normalizeDeviation={normalizeDeviation}
+                      tooltipCategories={previewTimeSeries.tooltipCategories}
+                      showLegend={false}
+                      showXAxisLabels={false}
+                      thresholdBandCenterSeries={{
+                        rhExpected: 2,
+                      }}
+                      thresholdBandVisibility={{
+                        temp: thresholdBandVisibility.temp,
+                        rhObserved: false,
+                        rhExpected: thresholdBandVisibility.rh,
+                        rhExpectedBaseline: false,
+                        moisture: thresholdBandVisibility.moisture,
+                      }}
+                    />
+                  </Card>
+                )}
+              </Box>
               <Box>
                 <Typography color="text.secondary"
 variant="overline">
@@ -259,21 +394,19 @@ variant="overline">
               <Box>
                 <Typography color="text.secondary"
 variant="overline">
-                  Value
+                  Duration
                 </Typography>
                 <Typography variant="body2">
-                  {typeof alert.value === 'number'
-                    ? `${alert.value}${alert.unit ? ` ${alert.unit}` : ''}`
-                    : 'N/A'}
+                  {displayValue}
                 </Typography>
               </Box>
               <Box>
                 <Typography color="text.secondary"
 variant="overline">
-                  Created At
+                  Start / End
                 </Typography>
                 <Typography variant="body2">
-                  {createdAt}
+                  {startEnd || createdAt}
                 </Typography>
               </Box>
               <Button onClick={() => setIsEditing(true)}
@@ -292,11 +425,17 @@ variant="contained">
       <Box
         sx={(theme) => ({
           flex: '0 0 auto',
+          overflow: 'hidden',
+          position: 'sticky',
+          top: 80,
+          mt: `${Math.max(0, desktopInitialOffsetTop)}px`,
+          alignSelf: 'flex-start',
+          maxHeight: `calc(100vh - 40px - ${Math.max(0, desktopInitialOffsetTop)}px)`,
           transition: theme.transitions.create('width', {
             duration: theme.transitions.duration.enteringScreen,
             easing: theme.transitions.easing.easeOut
           }),
-          width: open ? desktopDrawerWidth : 0
+          width: open ? desktopDrawerWidth + desktopDrawerGap : 0
         })}
       >
         <Box
@@ -306,8 +445,8 @@ variant="contained">
             borderColor: 'divider',
             borderRadius: 2.5,
             boxShadow: 24,
-            height: 'calc(100% - 32px)',
-            mt: 2,
+            maxHeight: `calc(100vh - 40px - ${Math.max(0, desktopInitialOffsetTop)}px)`,
+            ml: `${desktopDrawerGap}px`,
             overflow: 'auto',
             width: desktopDrawerWidth
           }}
@@ -349,11 +488,14 @@ variant="contained">
   );
 };
 
-AlertDetailsDrawer.propTypes = {
-  // @ts-ignore
-  alert: PropTypes.object,
+AlertDetailsDrawerComponent.propTypes = {
+  alert: PropTypes.any,
   container: PropTypes.any,
   onClose: PropTypes.func,
   onSave: PropTypes.func,
-  open: PropTypes.bool
+  open: PropTypes.bool,
+  normalizeDeviation: PropTypes.bool,
 };
+
+export const AlertDetailsDrawer = memo(AlertDetailsDrawerComponent);
+AlertDetailsDrawer.displayName = 'AlertDetailsDrawer';
