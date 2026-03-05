@@ -109,7 +109,7 @@ export const MetricCard: FC<MetricCardProps> = (props) => {
       <CardHeader
         action={null}
         
-        sx={{ pb: 0 }}
+        sx={{ pb: 0, pt: "24px" }}
         title={(
         <Stack
           alignItems="flex-end"

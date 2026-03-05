@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ESP32Aggregate } from '@/types/esp32';
+import type { ESP32Aggregate } from '@/types/esp32-data';
 import type { TimeWindow } from '@/contexts/time-context';
 import { buildSparseTimeAxisLabels } from '@/utils/chart-utils';
 

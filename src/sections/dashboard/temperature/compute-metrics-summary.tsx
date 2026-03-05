@@ -1,5 +1,5 @@
 import { ESP32AggregateSeriesKey } from "@/pages/dashboard";
-import { ESP32Aggregate } from "@/types/esp32";
+import { ESP32Aggregate } from "@/types/esp32-data";
 
 type MetricSummary = {
     withinThresholdSeries: number[];
