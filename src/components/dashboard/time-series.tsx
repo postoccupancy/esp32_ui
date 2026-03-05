@@ -28,7 +28,7 @@ const getSeriesRange = (...seriesList: Array<(number | null)[]>) => {
 
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const pad = (max - min || 1) * 0.2; // 20% padding to avoid clipping short-window peaks
+  const pad = (max - min || 1) * 0.15; // moderate global headroom
 
   return {
     min: min - pad,
@@ -99,7 +99,10 @@ const equalizeRawRangesByThresholdBandMulti = (
   return ranges.map((r, i) => {
     const band = bandMaxes[i];
     const span = spans[i];
-    const targetSpan = band > 0 ? Math.max(span, band / maxFeasibleQ) : span;
+    const centeredDataSpan = 2 * Math.max(Math.abs(r.max - centers[i]), Math.abs(centers[i] - r.min));
+    const targetSpan = band > 0
+      ? Math.max(span, band / maxFeasibleQ, centeredDataSpan)
+      : Math.max(span, centeredDataSpan);
     return {
       min: centers[i] - targetSpan / 2,
       max: centers[i] + targetSpan / 2,
@@ -221,6 +224,12 @@ const useChartOptions = (
     grid: {
       borderColor: theme.palette.divider,
       strokeDashArray: 2,
+      padding: {
+        top: 6,
+        right: 2,
+        bottom: 2,
+        left: 2,
+      },
       xaxis: {
         lines: {
           show: false
@@ -670,7 +679,7 @@ const TimeSeriesChartComponent = (props: TimeSeriesChartProps) => {
   const paddedChartMetricRanges = useMemo(() => {
     return chartMetricRanges.map((range) => {
       const span = Math.max(1, range.max - range.min);
-      const pad = span * 0.05; // extra headroom to avoid top clipping in short windows
+      const pad = span * 0.08; // light final headroom to preserve density
       return {
         min: range.min - pad,
         max: range.max + pad,

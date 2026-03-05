@@ -114,6 +114,7 @@ const buildEnvelopePath = (
   return `M ${upperPts.join(' L ')} L ${lowerPts.reverse().join(' L ')} Z`;
 };
 
+
 const Page: NextPage = () => {
   const settings = useSettings();
   const theme = useTheme();
@@ -1187,7 +1188,7 @@ const Page: NextPage = () => {
                     chartSeries={mainChartSeries}
                     overlaySeries={mainChartOverlaySeries}
                     showOverlayLines={false}
-                    equalizeThresholdBands
+                    equalizeThresholdBands={false}
                     normalizeDeviation={normalizedDeviationView}
                     tooltipCategories={tooltipCategories}
                     xAxisLabels={xAxisLabels}

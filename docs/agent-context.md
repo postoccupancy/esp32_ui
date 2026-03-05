@@ -1112,3 +1112,140 @@
 - Branch and latest commit hash (if available):
   - Branch: main
   - Latest commit: uncommitted changes in working tree
+
+## Milestone - Main chart anti-clipping fix for baseline-centered scaling
+- Current objective: Stop 24h main time-series peaks from running off the chart without adding window-specific exceptions.
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - Updated `equalizeRawRangesByThresholdBandMulti` so baseline-centered ranges are guaranteed to fully contain each metric's original min/max before any equalization.
+    - Added `centeredDataSpan` safeguard and enforce `targetSpan >= centeredDataSpan`.
+- Why:
+  - Prior logic could recenter around baseline with unchanged span, clipping asymmetric peaks (most visible in shorter windows like 24h).
+- Next step:
+  - Visual verify 24h/6h/1h windows no longer clip top peaks in main chart.
+- Blockers/risks:
+  - Slightly larger vertical span in some windows where data is highly asymmetric around baseline.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Main chart switched to independent per-metric range scaling
+- Current objective: Fix RH clipping in 24h main time series and remove nonessential cross-metric scaling behavior.
+- What changed:
+  - `src/pages/dashboard/index.tsx`
+    - Main `TimeSeriesChart` now sets `equalizeThresholdBands={false}`.
+- Why:
+  - Cross-metric threshold equalization can constrain a metric range despite local data headroom.
+  - Independent scaling uses each metric's own data + baseline + threshold envelope, plus built-in padding.
+- Next step:
+  - Verify 24h window RH no longer clips at top.
+- Blockers/risks:
+  - Threshold band heights across metrics are no longer forced visually comparable in the main chart.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Increased global y-axis headroom to prevent clipping
+- Current objective: Remove clipping without window-specific exceptions.
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - Increased shared `paddedChartMetricRanges` padding from 5% to 15% of span.
+- Why:
+  - This is a global chart-level headroom increase (no per-window special rules), so short windows with steep local peaks no longer touch/clip chart bounds.
+- Next step:
+  - Recheck 24h main chart RH peaks.
+- Blockers/risks:
+  - Slightly less vertical zoom due to larger top/bottom margins.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Increased global chart headroom again (no window-specific logic)
+- Current objective: Eliminate persistent top clipping in main chart while keeping scaling rules global.
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - `getSeriesRange` padding increased from 20% to 35%.
+    - Final `paddedChartMetricRanges` padding increased from 15% to 25%.
+- Why:
+  - Applies uniformly to all windows/metrics and avoids special-case branches.
+  - Provides substantial headroom at both pre- and post-grouping stages.
+- Next step:
+  - Recheck 24h RH and expected RH peaks for top-edge clipping.
+- Blockers/risks:
+  - Reduced vertical zoom due to larger margins.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Added global plot-area padding to prevent visual clipping
+- Current objective: Address persistent top clipping after range headroom changes.
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - Added global Apex grid padding in `useChartOptions`:
+      - `top: 20`, `right: 8`, `bottom: 8`, `left: 8`
+- Why:
+  - This handles render-box edge clipping independent of numeric y-axis range calculations.
+- Next step:
+  - Recheck 24h main chart for top clipping of RH/expected RH.
+- Blockers/risks:
+  - Slightly reduced drawable plot area due to padding.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Main chart y-axis locked to trailing 30d reference ranges
+- Current objective: Remove window-dependent vertical rescaling in main time series (only x-axis should vary by window).
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - Added `metricRangesOverride?: AxisRange[]` prop to allow caller-provided y-axis ranges.
+    - Effective ranges now use overrides when provided, then apply shared padding.
+  - `src/pages/dashboard/index.tsx`
+    - Added `computeRange` helper and `mainChartMetricRangesOverride` memo built from trailing 30d `baselineAggregates`:
+      - temp range from `temp_f_avg`
+      - RH ranges (observed + expected axis) from `rh_avg`
+      - moisture range from derived absolute humidity
+    - Passed `metricRangesOverride={mainChartMetricRangesOverride}` to the main `TimeSeriesChart`.
+- Effect:
+  - Main chart y-axis ranges are now anchored to a stable trailing-30d reference, avoiding per-window autoscaling shifts.
+- Next step:
+  - Verify 24h and shorter windows keep stable vertical scale and no top clipping.
+- Blockers/risks:
+  - If current-window values exceed trailing-30d extremes, clipping can still occur (by design of locked scale).
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Reduced chart padding after over-correction
+- Current objective: Keep stable y-scales but remove excessive vertical whitespace.
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - Reduced pre-range padding (`getSeriesRange`) from 35% to 15%.
+    - Reduced final padded range headroom from 25% to 8%.
+    - Reduced Apex grid plot padding from top/right/bottom/left `20/8/8/8` to `6/2/2/2`.
+- Effect:
+  - Charts retain the fixed y-scale behavior from prior change but regain tighter vertical fit.
+- Next step:
+  - Visual check on localhost for acceptable density without clipping.
+- Blockers/risks:
+  - If clipping returns on extreme spikes, we can slightly increase only final headroom (e.g., 10%) without reintroducing large whitespace.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Restored main chart autoscaling (removed fixed range override)
+- Current objective: Re-enable automatic y-axis scaling on the main chart.
+- What changed:
+  - `src/pages/dashboard/index.tsx`
+    - Removed temporary fixed-range override plumbing (`AxisRange`, `computeRange`, `mainChartMetricRangesOverride`).
+    - Removed `metricRangesOverride` prop from main `TimeSeriesChart` usage.
+  - `src/components/dashboard/time-series.tsx`
+    - Removed `metricRangesOverride` prop support.
+    - Restored range flow to derive from internal `chartMetricRanges` only.
+- Result:
+  - Main chart y-axis now autoscales again based on current plotted data.
+- Next step:
+  - Visual verify main chart behavior matches pre-override autoscale expectations.
+- Blockers/risks: None.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
