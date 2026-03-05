@@ -5,6 +5,8 @@ import { Layout as DashboardLayout } from '../../layouts/dashboard';
 import { useESP32, useESP32Aggregates } from '@/hooks/use-esp32';
 import { getDateMsAgo, midnightTomorrow, rangeOptions } from '@/utils/dataHelpers';
 import { useMemo } from 'react';
+import { buildThresholdEvents } from '@/utils/build-threshold-events';
+import { useTimeContext } from '@/contexts/time-context';
 
 
 const Page: NextPage = () => {
@@ -31,8 +33,8 @@ const Page: NextPage = () => {
     });
     const readings = data?.readings || [];
 
-
-
+  // const { bucketValue } = useTimeContext();
+  const bucketValue = 300; // always use 5 minutes for events
   const { 
     data: aggregatesData, 
     error: aggregatesError, 
@@ -40,11 +42,22 @@ const Page: NextPage = () => {
   } = useESP32Aggregates({
     start_ts, 
     end_ts, 
-    bucket: 300, // 5 minute buckets 
-    order_desc: false,
+    bucket: bucketValue,  
+    order_desc: true,
     limit: 1000,
   });
-  const aggregates = aggregatesData?.aggregates || [];
+  const aggregates = useMemo(() => aggregatesData?.aggregates || [], [aggregatesData]);
+
+  const events = useMemo(
+    () =>
+      buildThresholdEvents(aggregates, {
+        thresholdPct: 0.1, // 0.1
+        expectedSamplePeriodSeconds: 2,
+      }),
+    [aggregates]
+  );
+
+
 
   return (
     <>
@@ -76,8 +89,10 @@ const Page: NextPage = () => {
         <br />
         Aggregates count: {aggregates.length}
         <br />
-        And here is the {aggregates ? "aggregates" : "raw"} data from the ESP32 API:
-        <pre>{JSON.stringify(aggregates, null, 2)}</pre>
+        Events count: {events.length}
+        <br />
+        And here is the {events ? "events" : aggregates ? "aggregates" : "raw"} data from the ESP32 API:
+        <pre>{JSON.stringify(events.filter(e => e.breachCount > 0), null, 2)}</pre>
       </Box>
     </>
   );
