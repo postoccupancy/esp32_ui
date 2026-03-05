@@ -1,6 +1,4 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { NextPage } from 'next';
-import Head from 'next/head';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import {
@@ -23,14 +21,14 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { format, formatDistanceToNowStrict } from 'date-fns';
-import { TimeContextControls } from '../../components/time-context-controls';
-import { useTimeContext } from '../../contexts/time-context';
-import { usePageView } from '../../hooks/use-page-view';
-import { useSettings } from '../../hooks/use-settings';
-import { Layout as DashboardLayout } from '../../layouts/dashboard';
-import { paths } from '../../paths';
-import { AlertDetailsDrawer } from '../../sections/dashboard/alerts/alert-details-drawer';
-import type { Alert, AlertCategory, AlertStatus } from '../../types/alert';
+import { TimeContextControls } from '@/components/time-context-controls';
+import { useTimeContext } from '@/contexts/time-context';
+import { usePageView } from '@/hooks/use-page-view';
+import { useSettings } from '@/hooks/use-settings';
+import { Layout as DashboardLayout } from '@/layouts/dashboard';
+import { paths } from '@/paths';
+import { AlertDetailsDrawer } from '@/sections/dashboard/alerts/alert-details-drawer';
+import type { Alert, AlertCategory, AlertStatus } from '@/types/alert';
 import { useESP32Aggregates } from '@/hooks/use-esp32';
 import { buildThresholdEvents } from '@/utils/build-threshold-events';
 import type { ThresholdEvent, ThresholdMetric } from '@/types/esp32-events';

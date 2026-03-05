@@ -22,7 +22,7 @@ import {
   useMediaQuery
 } from '@mui/material';
 import type { Alert } from '../../../types/alert';
-import { TimeSeriesChart } from '../../../pages/components/time-series';
+import { TimeSeriesChart } from '@/components/dashboard/time-series';
 
 interface AlertDetailsDrawerProps {
   alert?: Alert | null;

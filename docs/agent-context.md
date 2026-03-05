@@ -1091,3 +1091,24 @@
 - Branch and latest commit hash (if available):
   - Branch: main
   - Latest commit: uncommitted changes in working tree
+
+## Milestone - Vercel build failure fixed (invalid pages under src/pages)
+- Current objective: Resolve Vercel build error: pages without valid default export components.
+- What changed:
+  - Moved non-route modules out of `src/pages/components/`:
+    - `src/pages/components/alerts-table.tsx` -> `src/components/dashboard/alerts-table.tsx`
+    - `src/pages/components/time-series.tsx` -> `src/components/dashboard/time-series.tsx`
+  - Updated imports:
+    - `src/pages/dashboard/index.tsx` now imports from `@/components/dashboard/*`
+    - `src/sections/dashboard/alerts/alert-details-drawer.tsx` now imports `TimeSeriesChart` from `@/components/dashboard/time-series`
+  - Updated moved `alerts-table` imports to use `@/...` aliases.
+  - Made `src/pages/dashboard/assistant.tsx` a valid page module with a default React component export.
+- Verification:
+  - Ran `npm run build` locally; build completes successfully and no page-without-component error remains.
+- Next step:
+  - Push commit and redeploy on Vercel.
+- Blockers/risks:
+  - `dashboard/assistant` now builds as an empty page by design; replace with real page when implemented.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
