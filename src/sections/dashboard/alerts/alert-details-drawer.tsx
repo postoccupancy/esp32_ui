@@ -332,6 +332,7 @@ variant="outlined">
                       tooltipCategories={previewTimeSeries.tooltipCategories}
                       showLegend={false}
                       showXAxisLabels={false}
+                      showSecondaryAxes={false}
                       thresholdBandCenterSeries={{
                         rhExpected: 2,
                       }}

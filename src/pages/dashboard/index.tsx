@@ -1188,7 +1188,7 @@ const Page: NextPage = () => {
                     chartSeries={mainChartSeries}
                     overlaySeries={mainChartOverlaySeries}
                     showOverlayLines={false}
-                    equalizeThresholdBands={false}
+                    equalizeThresholdBands
                     normalizeDeviation={normalizedDeviationView}
                     tooltipCategories={tooltipCategories}
                     xAxisLabels={xAxisLabels}

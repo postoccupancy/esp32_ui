@@ -156,6 +156,7 @@ const useChartOptions = (
   forceStraightLines?: boolean,
   showLegend?: boolean,
   showXAxisLabels?: boolean,
+  showSecondaryAxes?: boolean,
 ): ApexOptions => {
   const theme = useTheme();
   if (!tooltipCategories) tooltipCategories = createCategories();
@@ -353,6 +354,7 @@ const useChartOptions = (
         : (axisGroupBySeries?.[seriesIndex] ?? seriesIndex);
       const range = metricRanges[metricIndex] ?? metricRanges[0] ?? { min: 0, max: 1 };
       const isOverlayLine = Boolean(overlaySeriesCount && seriesIndex % 2 === 1);
+      const isPrimaryAxis = metricIndex === 0;
       return {
         axisBorder: { show: false },
         axisTicks: { show: false },
@@ -360,8 +362,8 @@ const useChartOptions = (
         min: range.min,
         max: range.max,
         forceNiceScale: false,
-        opposite: metricIndex > 0,
-        show: !isOverlayLine,
+        opposite: showSecondaryAxes === false ? false : metricIndex > 0,
+        show: !isOverlayLine && (showSecondaryAxes === false ? isPrimaryAxis : true),
         seriesName: name,
       };
     }),
@@ -418,7 +420,8 @@ const useChartOptions = (
     tooltipValueOverrides,
     forceStraightLines,
     showLegend,
-    showXAxisLabels
+    showXAxisLabels,
+    showSecondaryAxes
   ]);
 };
 
@@ -463,6 +466,7 @@ interface TimeSeriesChartProps {
   showLegend?: boolean;
   showXAxisLabels?: boolean;
   chartHeight?: number;
+  showSecondaryAxes?: boolean;
 }
 
 const TimeSeriesChartComponent = (props: TimeSeriesChartProps) => {
@@ -485,6 +489,7 @@ const TimeSeriesChartComponent = (props: TimeSeriesChartProps) => {
     showLegend = true,
     showXAxisLabels = true,
     chartHeight = 320,
+    showSecondaryAxes = true,
   } = props;
   const { window: timeWindow, thresholdPct } = useTimeContext();
   const theme = useTheme();
@@ -699,7 +704,8 @@ const TimeSeriesChartComponent = (props: TimeSeriesChartProps) => {
     tooltipValueOverrides,
     Boolean(activeOverlaySeries && activeOverlaySeries.length >= 2),
     showLegend,
-    showXAxisLabels
+    showXAxisLabels,
+    showSecondaryAxes
   );
 
   const chartNode = useMemo(

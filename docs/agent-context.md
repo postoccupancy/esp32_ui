@@ -1249,3 +1249,36 @@
 - Branch and latest commit hash (if available):
   - Branch: main
   - Latest commit: uncommitted changes in working tree
+
+## Milestone - Restored main-chart cross-metric comparability
+- Current objective: Fix temp y-scale appearing too large versus RH/moisture after autoscale restore.
+- What changed:
+  - `src/pages/dashboard/index.tsx`
+    - Main `TimeSeriesChart` switched back to `equalizeThresholdBands` enabled.
+- Result:
+  - Main chart keeps autoscale behavior but restores the cross-metric visual comparability logic the user had tuned earlier.
+- Next step:
+  - Visual verify temp vs RH relative vertical scale looks correct again.
+- Blockers/risks:
+  - Equalization may reduce independent range tightness for one metric in some windows.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
+
+## Milestone - Drawer chart right-side gutter reduced via single-side y-axis
+- Current objective: Remove excess right whitespace in alert detail drawer chart.
+- What changed:
+  - `src/components/dashboard/time-series.tsx`
+    - Added optional prop `showSecondaryAxes?: boolean` (default `true`).
+    - When `false`, only primary (left) y-axis is shown and all axes are non-opposite.
+  - `src/sections/dashboard/alerts/alert-details-drawer.tsx`
+    - Drawer `TimeSeriesChart` now sets `showSecondaryAxes={false}`.
+- Effect:
+  - Detail drawer chart no longer reserves right-side axis gutter from secondary axes, so right spacing matches left much more closely.
+- Next step:
+  - Visual verify drawer chart plot area symmetry and line/band rendering.
+- Blockers/risks:
+  - None expected; only affects drawer chart configuration.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: uncommitted changes in working tree
