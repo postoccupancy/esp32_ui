@@ -1282,3 +1282,13 @@
 - Branch and latest commit hash (if available):
   - Branch: main
   - Latest commit: uncommitted changes in working tree
+
+## Milestone update: dense chart buckets for missing ESP32 periods
+- Current objective: make dashboard time-series charts preserve uniform time when the sensor is offline instead of collapsing missing intervals.
+- What changed: added `densifyAggregates(...)` in `src/pages/dashboard/index.tsx` and introduced `chartAggregates`, which fills missing aggregate buckets between `from` and `to` with explicit null-valued rows (`count: 0`). Main chart categories, x-axis labels, baseline overlays, moisture series, and RH/expected-RH series now derive from `chartAggregates` instead of only returned API rows.
+- Next step: reload the dashboard and confirm Apex renders visible gaps/nulls across offline periods for the selected bucket size.
+- Blockers/risks: summaries and alert/event logic still use the raw `aggregates` array, so this change is intentionally chart-only. If the API ever returns bucket starts that are not aligned exactly to `from + n * bucketValue`, the densifier will need to anchor from server bucket boundaries instead of the client window start.
+- Branch and latest commit hash (if available):
+  - Branch: main
+  - Latest commit: 784d29c
+- 2026-03-24: Fixed dashboard densification to match esp32_api bucket alignment. The UI now keys buckets by epoch-aligned bucket index (`date_bin`-compatible) instead of assuming buckets start exactly at the selected `from` time. This corrects the regression where a dense x-axis appeared but all series values became null after filling gaps. File: `src/pages/dashboard/index.tsx`.

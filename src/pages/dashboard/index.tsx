@@ -59,6 +59,7 @@ import { AlertDetailsDrawer } from '../../sections/dashboard/alerts/alert-detail
 import type { Alert } from '../../types/alert';
 import type { ApexOptions } from 'apexcharts';
 import { Chart } from '@/components/chart';
+import type { ESP32Aggregate } from '@/types/esp32-data';
 
 export type ESP32AggregateSeriesKey =
   | 'temp_c_avg'
@@ -114,6 +115,62 @@ const buildEnvelopePath = (
   return `M ${upperPts.join(' L ')} L ${lowerPts.reverse().join(' L ')} Z`;
 };
 
+const getBucketIndex = (timeMs: number, bucketMs: number): number => Math.floor(timeMs / bucketMs);
+
+const densifyAggregates = (
+  aggregates: ESP32Aggregate[],
+  start: Date,
+  end: Date,
+  bucketSeconds: number
+): ESP32Aggregate[] => {
+  if (bucketSeconds <= 0 || end <= start) {
+    return aggregates;
+  }
+
+  const bucketMs = bucketSeconds * 1000;
+  const byBucketIndex = new Map<number, ESP32Aggregate>();
+
+  for (const aggregate of aggregates) {
+    const startMs = Date.parse(aggregate.bucket_start);
+    if (Number.isFinite(startMs)) {
+      byBucketIndex.set(getBucketIndex(startMs, bucketMs), aggregate);
+    }
+  }
+
+  const dense: ESP32Aggregate[] = [];
+  const startIndex = getBucketIndex(start.getTime(), bucketMs);
+  const endIndexExclusive = Math.ceil(end.getTime() / bucketMs);
+
+  for (let bucketIndex = startIndex; bucketIndex < endIndexExclusive; bucketIndex += 1) {
+    const bucketStartMs = bucketIndex * bucketMs;
+    const existing = byBucketIndex.get(bucketIndex);
+    if (existing) {
+      dense.push(existing);
+      continue;
+    }
+
+    const bucketEndMs = bucketStartMs + bucketMs;
+    dense.push({
+      bucket_start: new Date(bucketStartMs).toISOString(),
+      bucket_end: new Date(bucketEndMs).toISOString(),
+      first_ts: new Date(bucketStartMs).toISOString(),
+      last_ts: new Date(bucketEndMs).toISOString(),
+      count: 0,
+      temp_c_avg: null,
+      temp_c_min: null,
+      temp_c_max: null,
+      temp_f_avg: null,
+      temp_f_min: null,
+      temp_f_max: null,
+      rh_avg: null,
+      rh_min: null,
+      rh_max: null,
+    });
+  }
+
+  return dense;
+};
+
 
 const Page: NextPage = () => {
   const settings = useSettings();
@@ -163,6 +220,10 @@ const Page: NextPage = () => {
     }
   );
   const aggregates = useMemo(() => data?.aggregates || [], [data]);
+  const chartAggregates = useMemo(
+    () => densifyAggregates(aggregates, from, to, bucketValue),
+    [aggregates, bucketValue, from, to]
+  );
   const { data: weatherData } = useWeatherHourly(
     {
       provider: 'noaa',
@@ -272,7 +333,7 @@ const Page: NextPage = () => {
 
 
   const tooltipCategories = useMemo(() => {
-    return aggregates.map((agg) => {
+    return chartAggregates.map((agg) => {
       const d = new Date(agg.bucket_start);
       return d.toLocaleTimeString([], {
         weekday: windowDays > 1 ? 'short' : undefined,
@@ -283,11 +344,11 @@ const Page: NextPage = () => {
         second: bucketValue < 60 ? '2-digit' : undefined,
       });
     });
-  }, [aggregates, windowDays, bucketValue]);
+  }, [chartAggregates, windowDays, bucketValue]);
 
   const bucketStarts = useMemo(
-    () => aggregates.map((agg) => agg.bucket_start),
-    [aggregates]
+    () => chartAggregates.map((agg) => agg.bucket_start),
+    [chartAggregates]
   );
 
   const xAxisLabels = useMemo(
@@ -304,20 +365,20 @@ const Page: NextPage = () => {
   }, []);
 
   const repeatingBaselineOverlay = useMemo(() => {
-    if (!aggregates.length || baselineByHour.tempSeries.length !== 24 || baselineByHour.rhSeries.length !== 24) {
+    if (!chartAggregates.length || baselineByHour.tempSeries.length !== 24 || baselineByHour.rhSeries.length !== 24) {
       return [];
     }
 
-    const tempOverlay = aggregates.map((agg) => {
+    const tempOverlay = chartAggregates.map((agg) => {
       const hour = new Date(agg.bucket_start).getHours();
       return baselineByHour.tempSeries[hour] ?? null;
     });
-    const rhOverlay = aggregates.map((agg) => {
+    const rhOverlay = chartAggregates.map((agg) => {
       const hour = new Date(agg.bucket_start).getHours();
       return baselineByHour.rhSeries[hour] ?? null;
     });
 
-    const moistureOverlay = aggregates.map((agg) => {
+    const moistureOverlay = chartAggregates.map((agg) => {
       const hour = new Date(agg.bucket_start).getHours();
       return toAbsoluteHumidity(
         baselineByHour.tempSeries[hour] ?? null,
@@ -339,7 +400,7 @@ const Page: NextPage = () => {
         data: moistureOverlay
       }
     ];
-  }, [aggregates, baselineByHour, toAbsoluteHumidity]);
+  }, [chartAggregates, baselineByHour, toAbsoluteHumidity]);
 
   const baselineTrailingHourOrder = useMemo(() => {
     if (baselineByHour.tempSeries.length !== 24 || baselineByHour.rhSeries.length !== 24) {
@@ -422,8 +483,8 @@ const Page: NextPage = () => {
 
 
   const getSeries = useCallback((key: ESP32AggregateSeriesKey) => {
-    return aggregates.map((agg) => round(agg[key] as number | null | undefined));
-  }, [aggregates, round]);
+    return chartAggregates.map((agg) => round(agg[key] as number | null | undefined));
+  }, [chartAggregates, round]);
 
   
 
@@ -513,11 +574,11 @@ const Page: NextPage = () => {
     [thresholdBands]
   );
   const moistureSeries = useMemo(() => {
-    return aggregates.map((agg) => toAbsoluteHumidity(agg.temp_f_avg ?? null, agg.rh_avg ?? null));
-  }, [aggregates, toAbsoluteHumidity]);
+    return chartAggregates.map((agg) => toAbsoluteHumidity(agg.temp_f_avg ?? null, agg.rh_avg ?? null));
+  }, [chartAggregates, toAbsoluteHumidity]);
   const outdoorMoistureSeries = useMemo(() => {
     const rows = weatherData?.rows ?? [];
-    if (!rows.length || !aggregates.length) return [];
+    if (!rows.length || !chartAggregates.length) return [];
 
     const toHourKey = (iso: string) => new Date(iso).toISOString().slice(0, 13);
     const weatherByHour = new Map<string, number | null>();
@@ -535,11 +596,11 @@ const Page: NextPage = () => {
       weatherByHour.set(hourKey, toAbsoluteHumidity(tempF, rh));
     }
 
-    return aggregates.map((agg) => weatherByHour.get(toHourKey(agg.bucket_start)) ?? null);
-  }, [aggregates, toAbsoluteHumidity, weatherData?.rows]);
+    return chartAggregates.map((agg) => weatherByHour.get(toHourKey(agg.bucket_start)) ?? null);
+  }, [chartAggregates, toAbsoluteHumidity, weatherData?.rows]);
   const openMeteoMoistureSeries = useMemo(() => {
     const rows = openMeteoData?.rows ?? [];
-    if (!rows.length || !aggregates.length) return [];
+    if (!rows.length || !chartAggregates.length) return [];
 
     const toHourKey = (iso: string) => new Date(iso).toISOString().slice(0, 13);
     const weatherByHour = new Map<string, number | null>();
@@ -555,20 +616,20 @@ const Page: NextPage = () => {
       const tempF = tempC * (9 / 5) + 32;
       weatherByHour.set(hourKey, toAbsoluteHumidity(tempF, rh));
     }
-    return aggregates.map((agg) => weatherByHour.get(toHourKey(agg.bucket_start)) ?? null);
-  }, [aggregates, openMeteoData?.rows, toAbsoluteHumidity]);
+    return chartAggregates.map((agg) => weatherByHour.get(toHourKey(agg.bucket_start)) ?? null);
+  }, [chartAggregates, openMeteoData?.rows, toAbsoluteHumidity]);
   const moistureBaselineSeries = useMemo(() => {
-    if (!aggregates.length || baselineByHour.tempSeries.length !== 24 || baselineByHour.rhSeries.length !== 24) {
+    if (!chartAggregates.length || baselineByHour.tempSeries.length !== 24 || baselineByHour.rhSeries.length !== 24) {
       return [];
     }
-    return aggregates.map((agg) => {
+    return chartAggregates.map((agg) => {
       const hour = new Date(agg.bucket_start).getHours();
       return toAbsoluteHumidity(
         baselineByHour.tempSeries[hour] ?? null,
         baselineByHour.rhSeries[hour] ?? null
       );
     });
-  }, [aggregates, baselineByHour, toAbsoluteHumidity]);
+  }, [chartAggregates, baselineByHour, toAbsoluteHumidity]);
 
   const moistureDeviationSeries = useMemo(() => {
     if (!normalizedDeviationView) return moistureSeries;
@@ -595,14 +656,14 @@ const Page: NextPage = () => {
     });
   }, [moistureBaselineSeries, normalizedDeviationView, openMeteoMoistureSeries]);
   const observedRhSeries = useMemo(
-    () => aggregates.map((agg) => (typeof agg.rh_avg === 'number' ? agg.rh_avg : null)),
-    [aggregates]
+    () => chartAggregates.map((agg) => (typeof agg.rh_avg === 'number' ? agg.rh_avg : null)),
+    [chartAggregates]
   );
   const expectedRhSeries = useMemo(
     () => {
       const tempBaseline = repeatingBaselineOverlay[0]?.data ?? [];
       const rhBaseline = repeatingBaselineOverlay[1]?.data ?? [];
-      return aggregates.map((agg, i) => {
+      return chartAggregates.map((agg, i) => {
         const tempValue = agg.temp_f_avg;
         const tempBase = tempBaseline[i] ?? null;
         const rhBase = rhBaseline[i] ?? null;
@@ -614,7 +675,7 @@ const Page: NextPage = () => {
         return Number.isFinite(expectedRh) ? expectedRh : null;
       });
     },
-    [aggregates, repeatingBaselineOverlay]
+    [chartAggregates, repeatingBaselineOverlay]
   );
   const mainRhAlignment = useMemo(() => {
     const tempBaseline = repeatingBaselineOverlay[0]?.data ?? [];
