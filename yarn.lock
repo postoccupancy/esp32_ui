@@ -5637,6 +5637,11 @@ fflate@0.7.3:
   resolved "https://registry.npmjs.org/fflate/-/fflate-0.7.3.tgz"
   integrity sha512-0Zz1jOzJWERhyhsimS54VTqOteCNwRtIlh8isdL0AXLo0g7xNTfTL7oWrkmCnPhZGocKIkWHBistBrrpoNH3aw==
 
+fft.js@^4.0.4:
+  version "4.0.4"
+  resolved "https://registry.npmjs.org/fft.js/-/fft.js-4.0.4.tgz"
+  integrity sha512-f9c00hphOgeQTlDyavwTtu6RiK8AIFjD6+jvXkNkpeQ7rirK3uFWVpalkoS4LAwbdX7mfZ8aoBfFVQX1Re/8aw==
+
 file-entry-cache@^6.0.1:
   version "6.0.1"
   resolved "https://registry.npmjs.org/file-entry-cache/-/file-entry-cache-6.0.1.tgz"
