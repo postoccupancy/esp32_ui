@@ -92,7 +92,9 @@ export const paths = {
       index: '/dashboard/social',
       profile: '/dashboard/social/profile',
       feed: '/dashboard/social/feed'
-    }
+    },
+    spectrum: '/dashboard/spectrum',
+    wavelet: '/dashboard/wavelet'
   },
   components: {
     index: '/components',

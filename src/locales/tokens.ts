@@ -52,6 +52,8 @@ export const tokens = {
     register: 'nav.register',
     resetPassword: 'nav.resetPassword',
     socialMedia: 'nav.socialMedia',
-    verifyCode: 'nav.verifyCode'
+    spectrum: 'nav.spectrum',
+    verifyCode: 'nav.verifyCode',
+    wavelet: 'nav.wavelet'
   }
 };

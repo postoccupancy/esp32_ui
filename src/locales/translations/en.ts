@@ -50,5 +50,7 @@ export const en = {
   [tokens.nav.register]: 'Register',
   [tokens.nav.resetPassword]: 'Reset Password',
   [tokens.nav.socialMedia]: 'Social Media',
-  [tokens.nav.verifyCode]: 'Verify Code'
+  [tokens.nav.spectrum]: 'Spectrum',
+  [tokens.nav.verifyCode]: 'Verify Code',
+  [tokens.nav.wavelet]: 'Wavelet'
 };

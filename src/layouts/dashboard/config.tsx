@@ -44,12 +44,25 @@ export const getSections = (t: TFunction): Section[] => [
       },
       {
         title: t(tokens.nav.analytics),
-        path: paths.dashboard.analytics,
         icon: (
           <SvgIcon fontSize="small">
             <BarChartSquare02Icon />
           </SvgIcon>
-        )
+        ),
+        items: [
+          {
+            title: t(tokens.nav.analytics),
+            path: paths.dashboard.analytics,
+          },
+          {
+            title: t(tokens.nav.spectrum),
+            path: paths.dashboard.spectrum,
+          },
+          {
+            title: t(tokens.nav.wavelet),
+            path: paths.dashboard.wavelet,
+          },
+        ]
       },
       {
         title: t(tokens.nav.locations),

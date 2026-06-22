@@ -6,6 +6,8 @@ import { constructUrl } from "@/utils/dataHelpers";
 const baseUrl = process.env.NEXT_PUBLIC_ESP32_API_BASE_URL || "http://localhost:8000";
 const token = process.env.NEXT_PUBLIC_API_TOKEN || "a-long-secret-key";
 
+const authHeaders = { "X-Status-Token": token };
+
 // RAW TABLE DATA
 
 type ESP32Response = {
@@ -31,12 +33,10 @@ type UseESP32Options = UseESP32BaseOptions & {
 export function useESP32(options: UseESP32Options = {}) {
   const endpoint = `${baseUrl}/timeseries`;
 
-  const params = { token, ...options };
-
-  console.log("constructURL: ", constructUrl(endpoint, params));
+  const params = { ...options };
 
   const fetchData = async (): Promise<ESP32Response> => {
-    const response = await fetch(constructUrl(endpoint, params));
+    const response = await fetch(constructUrl(endpoint, params), { headers: authHeaders });
     if (!response.ok) {
       throw new Error("Network response from URL was not ok");
     }
@@ -80,10 +80,10 @@ export function useESP32Aggregates(
   queryOptions: UseESP32QueryOptions = {}
 ) {
   const endpoint = `${baseUrl}/timeseries`;
-  const params = { token, ...options };
+  const params = { ...options };
 
   const fetchAggregates = async (): Promise<ESP32AggregateResponse> => {
-    const response = await fetch(constructUrl(endpoint, params));
+    const response = await fetch(constructUrl(endpoint, params), { headers: authHeaders });
     if (!response.ok) {
       throw new Error("Network response from URL was not ok");
     }
@@ -132,10 +132,10 @@ export function useESP32Summary(
   queryOptions: UseESP32QueryOptions = {}
 ) {
   const endpoint = `${baseUrl}/timeseries/summary`;
-  const params = { token, ...options };
+  const params = { ...options };
 
   const fetchSummary = async (): Promise<ESP32SummaryResponse> => {
-    const response = await fetch(constructUrl(endpoint, params));
+    const response = await fetch(constructUrl(endpoint, params), { headers: authHeaders });
     if (!response.ok) {
       throw new Error("Network response from URL was not ok");
     }
@@ -203,10 +203,10 @@ export function useWeatherHourly(
   queryOptions: UseESP32QueryOptions = {}
 ) {
   const endpoint = `${baseUrl}/weather/hourly`;
-  const params = { token, ...options };
+  const params = { ...options };
 
   const fetchWeather = async (): Promise<ESP32WeatherHourlyResponse> => {
-    const response = await fetch(constructUrl(endpoint, params));
+    const response = await fetch(constructUrl(endpoint, params), { headers: authHeaders });
     if (!response.ok) {
       throw new Error("Network response from weather URL was not ok");
     }
